@@ -3,7 +3,7 @@ from PIL import Image, ImageDraw
 
 from i2c.ui.geom import Rect, Word
 from i2c.ui.table import (build_table, clean_text, columns_from_header_words, detect_vertical_lines,
-                          group_rows, header_band, match_headers, merge_close)
+                          group_rows, header_band, match_headers, merge_close, recover_dropped_cells)
 
 
 def w(text, left, top, width=None, height=20):
@@ -80,6 +80,31 @@ def test_empty_table_has_headers_only():
     t = build_table([w("Document", 1010, 510), w("Date", 1210, 510)], TABLE, lines=[1200])
     assert t.headers == ["Document", "Date"] and t.rows == []
     assert header_band([w("Document", 1010, 510)], 8) == (504, 536)
+
+
+def test_recover_dropped_cells_uses_header_context():
+    # Synthetic capture: header ink in both columns, row ink in both, but OCR "dropped" Qty.
+    rect = Rect(0, 0, 400, 100)
+    img = Image.new("L", (400, 100), 255)
+    d = ImageDraw.Draw(img)
+    d.rectangle((10, 10, 60, 25), fill=0)     # header "Name"
+    d.rectangle((210, 10, 250, 25), fill=0)   # header "Qty."
+    d.rectangle((10, 50, 80, 65), fill=0)     # cell "Widget"
+    d.rectangle((370, 50, 380, 65), fill=0)   # cell "2" (right-aligned, dropped by OCR)
+    words = [w("Name", 10, 10, 50, 15), w("Qty.", 210, 10, 40, 15), w("Widget", 10, 50, 70, 15)]
+    table = build_table(words, rect, lines=[200])
+    assert table.rows[0].cells == {"Name": "Widget", "Qty.": ""}
+
+    seen = []
+
+    def fake_ocr(image, scale):
+        seen.append(image.size)
+        hw = 41  # header ink width; the composite has header at x=20, cell after a 20 px gap
+        return [w("Qty.", 20, 15, hw, 15), w("O", 20 + hw + 20, 15, 11, 15)]
+
+    fixed = recover_dropped_cells(table, img, rect, fake_ocr, header_top=5, header_bottom=30)
+    assert fixed.rows[0].cells == {"Name": "Widget", "Qty.": "0"}   # lone 'O' -> zero
+    assert len(seen) == 1                                            # only the empty inked cell
 
 
 def test_signature_changes_with_content():

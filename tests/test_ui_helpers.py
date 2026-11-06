@@ -114,7 +114,9 @@ def test_annotate_adds_banner_and_keeps_size():
     out = annotate(img, (100, 50), [Rect(200, 150, 300, 200)], "Order header verified")
     assert out.width == 800 and out.height > 600
     banner_h = out.height - 600
-    assert out.getpixel((150 - 100 + 100, 150 - 50 + banner_h)) == (230, 0, 120)  # outline pixel
+    m = 3 + 2  # outline width + margin, drawn outside the target
+    assert out.getpixel((150, 100 - m + banner_h)) == (230, 0, 120)   # top edge, outside target
+    assert out.getpixel((150, 100 + 2 + banner_h)) == (255, 255, 255)  # target interior untouched
 
 
 def test_evidence_numbering_with_given_image(tmp_path):

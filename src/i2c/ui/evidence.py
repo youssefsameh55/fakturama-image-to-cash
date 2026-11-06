@@ -38,14 +38,16 @@ def annotate(img: Image.Image, origin: tuple[int, int], targets: list[Rect], cap
     ox, oy = origin
     for r in targets:
         box = r.offset(-ox, -oy)
-        draw.rectangle(box.as_tuple(), outline=TARGET_COLOR, width=width)
+        m = width + 2  # draw outside the target so the outline never covers its text
+        draw.rectangle((box.left - m, box.top - m, box.right + m, box.bottom + m),
+                       outline=TARGET_COLOR, width=width)
 
     size = max(18, out.width // 80)
     font = _font(size)
     banner_h = int(size * 1.8)
     banner = Image.new("RGB", (out.width, banner_h), OK_COLOR if ok else FAIL_COLOR)
     ImageDraw.Draw(banner).text((size // 2, (banner_h - size) // 2 - 2),
-                                ("✔ " if ok else "✘ ") + caption, fill="white", font=font)
+                                ("OK  " if ok else "FAIL  ") + caption, fill="white", font=font)
     combined = Image.new("RGB", (out.width, out.height + banner_h))
     combined.paste(banner, (0, 0))
     combined.paste(out, (0, banner_h))

@@ -220,6 +220,72 @@ def build_table(words: list[Word], table_rect: Rect, lines: list[int] | None,
     return Table(headers, columns, out, raw)
 
 
+# ---------------------------------------------------------------- dropped-cell recovery
+#
+# Windows OCR silently drops short isolated tokens ("0", "2", "0%") - measured on the probe
+# screenshots, and padding/upscaling/tight crops don't help. Giving the engine context does:
+# paste the column's own header (cropped from the same image, same font) in front of the cell,
+# OCR that small composite, keep only the words to the right of the header.
+
+INK_THRESHOLD = 140          # grayscale below this = text pixel; grid lines (~180-220) are not ink
+CONTEXT_GAP = 20             # px between header and cell in the composite (measured: 20 works, 40 doesn't)
+CONTEXT_SCALE = 2.0
+
+
+def ink_bbox(img: Image.Image) -> tuple[int, int, int, int] | None:
+    return img.convert("L").point(lambda v: 255 if v < INK_THRESHOLD else 0).getbbox()
+
+
+def _ink_crop(img: Image.Image) -> Image.Image | None:
+    bb = ink_bbox(img)
+    return img.crop(bb) if bb else None
+
+
+def _fix_digit_lookalikes(text: str) -> str:
+    """A lone 'O'/'o' recovered from a cell is a zero."""
+    return " ".join("0" if t in ("O", "o") else t for t in text.split())
+
+
+def recover_dropped_cells(table: Table, img: Image.Image, rect: Rect, ocr_fn,  # noqa: ANN001
+                          header_top: int, header_bottom: int, pad: int = 4) -> Table:
+    """Re-read cells that came back empty but contain ink, using header context.
+
+    `img` is the capture of `rect`; `header_top/bottom` are screen y of the header row;
+    `ocr_fn(image, scale) -> list[Word]` (coords in the composite's unscaled pixels).
+    """
+    gray = img.convert("L")
+    keys = list(table.rows[0].cells) if table.rows else []
+    heads: list[Image.Image | None] = []
+    for a, b in table.columns:
+        heads.append(_ink_crop(gray.crop((a - rect.left + 3, header_top - rect.top,
+                                          b - rect.left - 3, header_bottom - rect.top))))
+    fallback_head = next((h for h in heads if h is not None), None)
+
+    new_rows: list[Row] = []
+    for row in table.rows:
+        cells = dict(row.cells)
+        for i, ((a, b), key) in enumerate(zip(table.columns, keys)):
+            if cells.get(key):
+                continue
+            cell = _ink_crop(gray.crop((a - rect.left + 3, row.rect.top - rect.top - pad,
+                                        b - rect.left - 3, row.rect.bottom - rect.top + pad)))
+            head = heads[i] or fallback_head
+            if cell is None or head is None:
+                continue
+            w = head.width + CONTEXT_GAP + cell.width + 40
+            h = max(head.height, cell.height) + 30
+            comp = Image.new("L", (w, h), 255)
+            comp.paste(head, (20, 15))
+            comp.paste(cell, (20 + head.width + CONTEXT_GAP, 15 + max(0, head.height - cell.height)))
+            boundary = 20 + head.width + CONTEXT_GAP / 2
+            words = [x for x in ocr_fn(comp, CONTEXT_SCALE) if x.rect.cx > boundary]
+            text = _fix_digit_lookalikes(clean_text(" ".join(x.text for x in words)))
+            if text:
+                cells[key] = text
+        new_rows.append(Row(cells, row.rect, row.words))
+    return Table(table.headers, table.columns, new_rows, table.raw_headers)
+
+
 def header_band(words: list[Word], row_tolerance: int, pad: int = 6) -> tuple[int, int] | None:
     """(top, bottom) in screen coords of the header row, padded so grid lines dominate it."""
     rows = group_rows([w for w in words if w.text.strip()], row_tolerance)
@@ -232,7 +298,7 @@ def header_band(words: list[Word], row_tolerance: int, pad: int = 6) -> tuple[in
 def read_table(rect: Rect, expected_headers: list[str] | None = None, *, scale: float = 1.0,
                language: str = "en-US", row_tolerance: int = 8) -> tuple[Table, Image.Image]:
     """Live: capture `rect` (from UIA), OCR it and assemble the table. Returns (table, image)."""
-    from i2c.ui.ocr import ocr_rect
+    from i2c.ui.ocr import ocr_image, ocr_rect
 
     words, img = ocr_rect(rect, scale, language)
     lines: list[int] = []
@@ -240,4 +306,9 @@ def read_table(rect: Rect, expected_headers: list[str] | None = None, *, scale: 
     if band:
         img_lines = detect_vertical_lines(img, band[0] - rect.top, band[1] - rect.top)
         lines = [rect.left + x for x in img_lines]
-    return build_table(words, rect, lines, expected_headers, row_tolerance), img
+    table = build_table(words, rect, lines, expected_headers, row_tolerance)
+    if band and table.rows:
+        table = recover_dropped_cells(table, img, rect,
+                                      lambda im, s: ocr_image(im, (0, 0), s, language),
+                                      band[0], band[1])
+    return table, img

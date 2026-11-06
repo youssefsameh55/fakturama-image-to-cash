@@ -14,7 +14,7 @@ See `PLAN.md` for the full design. `DESIGN.md` (Part 1) will be written after th
 | M1 Skeleton + UIA probe tool | done |
 | M2 Extraction + offline tests | done (offline); live call pending |
 | UIA probe of 10 screens | done (`artifacts/probe/`, findings below) |
-| M3 UI toolkit (find/wait/input/ocr/table/evidence) | done offline; live table read pending |
+| M3 UI toolkit (find/wait/input/ocr/table/evidence) | done; checked live on VATs, terms of payment and Select the address |
 | M4–M7 Flow stages | not started |
 | M8 Deliverables | not started |
 
@@ -71,6 +71,12 @@ See `PLAN.md` §9 (G1–G6). Additional implementation decisions:
   "First Name".
 - **No OCR upscaling (`ocr.upscale: 1`)**, unlike the plan's 2×. On the 3000-px-wide test screen,
   upscaling the probe screenshots made recognition worse. The setting is still configurable.
+- **Cells that OCR drops are read again with context.** Windows OCR drops short tokens that stand
+  alone ("0", "2", "0%"). Padding, scaling and tight crops didn't help. If a cell came back empty
+  but still contains dark pixels, the column's own header (cropped from the same image) is pasted
+  in front of the cell, that small image is OCR'd again, and only the words right of the header
+  are kept. A lone "O" is read as zero. The live payment row went from `Cash | Pay Cash` to
+  `Cash | Pay Cash | 0% | 0 | 0`.
 - **`%` misreads are repaired.** Windows OCR reads "0.00 %" as "0.00 0/0". The repair only applies
   to a standalone token, so dates are left alone.
 - **Controls are found by label.** SWT names many inputs after their label (`Edit "Cust.Ref."`);
