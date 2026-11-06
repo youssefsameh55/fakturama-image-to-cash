@@ -1,0 +1,39 @@
+[build-system]
+requires = ["setuptools>=69", "wheel"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "fakturama-image-to-cash"
+version = "0.1.0"
+description = "Order image -> Fakturama Order -> linked paid Invoice, via LLM extraction and UI Automation"
+readme = "README.md"
+requires-python = ">=3.12"
+dependencies = [
+    "pydantic>=2.7",
+    "python-dotenv>=1.0",
+    "PyYAML>=6.0",
+    "Pillow>=10.3",
+    "anthropic>=0.60",
+    "google-genai>=1.0",
+    # Windows-only UI automation / capture / OCR
+    "pywinauto>=0.6.8; sys_platform == 'win32'",
+    "mss>=9.0; sys_platform == 'win32'",
+    "winrt-Windows.Media.Ocr>=2.0; sys_platform == 'win32'",
+    "winrt-Windows.Graphics.Imaging>=2.0; sys_platform == 'win32'",
+    "winrt-Windows.Storage.Streams>=2.0; sys_platform == 'win32'",
+    "winrt-Windows.Foundation>=2.0; sys_platform == 'win32'",
+    "winrt-Windows.Globalization>=2.0; sys_platform == 'win32'",
+]
+
+[project.optional-dependencies]
+dev = ["pytest>=8.0"]
+
+[project.scripts]
+i2c = "i2c.main:main"
+
+[tool.setuptools.packages.find]
+where = ["src"]
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]
+addopts = "-q"

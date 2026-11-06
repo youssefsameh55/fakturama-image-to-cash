@@ -1,0 +1,81 @@
+# UI label strings, timeouts and mappings.
+# Labels marked "probe" are provisional until confirmed by tools/dump_tree.py output.
+
+app:
+  window_title_regex: ".*Fakturama.*"   # overridden by FAKTURAMA_WINDOW_TITLE in .env
+  backend: uia
+
+timeouts:            # seconds
+  default: 10
+  window: 15
+  table_stable: 8
+  save: 15
+  poll_interval: 0.25
+
+ocr:
+  upscale: 2
+  language: en-US
+  row_merge_tolerance_px: 8      # words whose centre-y differ by less than this are one row
+
+extraction:
+  prompt_version: "v1"
+  max_image_long_side: 1568
+  max_tokens: 4096
+
+money:
+  tolerance: "0.01"
+
+matching:
+  product_description_mismatch: warn   # warn | stop
+
+payment_method_codes:                  # extracted method -> Fakturama payment code
+  "Bank Transfer": "Credit transfer"
+  "Credit Card": "Credit card"
+  "SEPA Direct Debit": "SEPA direct debit"
+
+vat:
+  name_template: "VAT {percent}%"
+  code: "S"
+
+labels:                                # probe: confirm every value against real UIA names
+  toolbar:
+    order: "Order"
+  left_panel:
+    new_contact: "New Contact"
+  menu:
+    data: "Data"
+    documents: "Documents"
+    terms_of_payment: "Payment"
+    vats: "VATs"
+  order_editor:
+    date: "Date"
+    cust_ref: "Cust.Ref."
+    net_gross: "Net"
+    with_vat: "With VAT"
+    addresses: "Addresses"
+    items: "Items"
+    total_net: "Total Net"
+    vat: "VAT"
+    total: "Total"
+    shipping_free: "Free of shipping costs"
+    follow_up: "Create a follow-up document"
+    follow_up_invoice: "Invoice"
+  dialogs:
+    select_address: "Select the address"
+    select_product: "Select a product"
+    ok: "OK"
+    cancel: "Cancel"
+  debtor_editor:
+    company: "Company"
+    first_name: "First Name"
+    last_name: "Name"
+    tab_addresses: "Addresses"
+    tab_misc: "Miscellaneous"
+    tab_payment: "Payment"
+    alias: "Alias name"
+  invoice_editor:
+    paid: "paid"
+    payment_date: "Date"
+    value: "Value"
+  common:
+    save: "Save"
