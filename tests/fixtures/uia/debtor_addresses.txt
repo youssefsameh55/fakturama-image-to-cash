@@ -1,0 +1,154 @@
+# window='Fakturama - C:\\Users\\USER' pid=21872 depth<=20
+# nodes=151 elapsed=1.3s
+
+Window "Fakturama - C:\Users\USER" [] {SWT_Window0} (-13,-13,3013,1917) patterns=[ScrollItem,Window,LegacyIAccessible] legacy=<role=10>
+  Pane "" [1705092] {SWT_Window0} (0,216,3000,1904) patterns=[LegacyIAccessible] legacy=<role=10>
+    Pane "" [1378912] {SWT_Window0} (0,216,3000,1904) patterns=[LegacyIAccessible] legacy=<role=10>
+      Pane "Fakturama Perspective" [525486] {SWT_Window0} (0,216,3000,1904) patterns=[ScrollItem,LegacyIAccessible] legacy=<role=10>
+        Pane "" [1246602] {SWT_Window0} (0,216,3000,1904) patterns=[LegacyIAccessible] legacy=<role=10>
+          Pane "Navigation View" [5245328] {SWT_Window0} (0,216,598,1904) patterns=[ScrollItem,LegacyIAccessible] legacy=<role=10>
+            Pane "" [655548] {SWT_Window0} (0,216,598,1904) patterns=[LegacyIAccessible] legacy=<role=10>
+              Pane "" [1705448] {SWT_Window0} (10,226,588,366) patterns=[LegacyIAccessible] legacy=<role=10>
+                Text "Web Shop" [919424] {SWT_Window0} (22,304,186,348) patterns=[ScrollItem,LegacyIAccessible] legacy=<role=41 help='Get new orders and products from web shop'> offscreen
+              Pane "" [11864538] {SWT_Window0} (10,376,588,1056) patterns=[LegacyIAccessible] legacy=<role=10>
+                Text "Documents" [1114142] {SWT_Window0} (22,454,198,498) patterns=[ScrollItem,LegacyIAccessible] legacy=<role=41 help='Open a list with all the documents'> offscreen
+                Text "Products" [1574170] {SWT_Window0} (22,508,168,552) patterns=[ScrollItem,LegacyIAccessible] legacy=<role=41 help='Open a list with all products'> offscreen
+                Text "Creditors" [2425544] {SWT_Window0} (22,562,172,606) patterns=[ScrollItem,LegacyIAccessible] legacy=<role=41 help='Open a list with all creditors'> offscreen
+                Text "Debtors" [1770182] {SWT_Window0} (22,616,160,660) patterns=[ScrollItem,LegacyIAccessible] legacy=<role=41 help='Open the list with all debtors'> offscreen
+                Text "terms of payment" [2230446] {SWT_Window0} (22,670,266,714) patterns=[ScrollItem,LegacyIAccessible] legacy=<role=41 help='Open a list with all terms of payment'> offscreen
+                Text "Shippings" [1376950] {SWT_Window0} (22,724,182,768) patterns=[ScrollItem,LegacyIAccessible] legacy=<role=41 help='Open a list with all shipping methods'> offscreen
+                Text "VATs" [1050106] {SWT_Window0} (22,778,124,822) patterns=[ScrollItem,LegacyIAccessible] legacy=<role=41 help='Open a list with all tax rates'> offscreen
+                Text "Texts" [1378998] {SWT_Window0} (22,832,130,876) patterns=[ScrollItem,LegacyIAccessible] legacy=<role=41 help='Open a list with all texts'> offscreen
+                Text "Lists" [1049730] {SWT_Window0} (22,886,122,930) patterns=[ScrollItem,LegacyIAccessible] legacy=<role=41 help='Open miscellaneous lists'> offscreen
+                Text "Expenditure Vouchers" [984276] {SWT_Window0} (22,940,308,984) patterns=[ScrollItem,LegacyIAccessible] legacy=<role=41 help='Open a list with all the expenditures'> offscreen
+                Text "Receipt Vouchers" [918254] {SWT_Window0} (22,994,258,1038) patterns=[ScrollItem,LegacyIAccessible] legacy=<role=41 help='Open a list with all the receipt vouchers'> offscreen
+              Pane "" [1311422] {SWT_Window0} (10,1066,588,1260) patterns=[LegacyIAccessible] legacy=<role=10>
+                Text "New product" [2360000] {SWT_Window0} (22,1144,214,1188) patterns=[ScrollItem,LegacyIAccessible] legacy=<role=41 help='Create a new product'> offscreen
+                Text "New Contact" [853516] {SWT_Window0} (22,1198,214,1242) patterns=[ScrollItem,LegacyIAccessible] legacy=<role=41 help='Create a new contact'> offscreen
+              Pane "" [3671798] {SWT_Window0} (10,1270,588,1518) patterns=[LegacyIAccessible] legacy=<role=10>
+                Text "ParcelService" [263434] {SWT_Window0} (22,1348,214,1392) patterns=[ScrollItem,LegacyIAccessible] legacy=<role=41 help='Open the web site of the parcel service.'> offscreen
+                Text "www.fakturama.info" [395888] {SWT_Window0} (22,1402,286,1446) patterns=[ScrollItem,LegacyIAccessible] legacy=<role=41 help='Open the project web site www.fakturama.info'> offscreen
+                Text "Calculator" [919468] {SWT_Window0} (22,1456,182,1500) patterns=[ScrollItem,LegacyIAccessible] legacy=<role=41 help='Open the calculator'> offscreen
+          Tab "New Debtor" [3801772] {SWT_Window0} (606,216,3000,1176) patterns=[Selection,ScrollItem,LegacyIAccessible] legacy=<role=60>
+            ToolBar "" [853630] {ToolbarWindow32} (2910,218,2988,256) patterns=[ScrollItem,LegacyIAccessible] legacy=<role=22>
+              Button "Minimize" [] {} (2910,218,2949,256) patterns=[Invoke,ScrollItem,LegacyIAccessible] legacy=<role=43>
+              Button "Maximize" [] {} (2949,218,2988,256) patterns=[Invoke,ScrollItem,LegacyIAccessible] legacy=<role=43>
+            Pane "New Debtor" [2689564] {SWT_Window0} (612,262,2994,1170) patterns=[ScrollItem,LegacyIAccessible] legacy=<role=10>
+              Pane "" [394516] {SWT_Window0} (612,262,2994,1154) patterns=[LegacyIAccessible] legacy=<role=10>
+                Pane "" [197922] {SWT_Window0} (612,262,2994,1154) patterns=[LegacyIAccessible] legacy=<role=10>
+                  Text "Customer ID" [198040] {Static} (732,304,866,336) patterns=[LegacyIAccessible] legacy=<role=41>
+                  Edit "Customer ID" [328838] {Edit} (880,302,1298,340) patterns=[Value,LegacyIAccessible] value='CUST000001' legacy=<role=42 value='CUST000001'>
+                  Pane "" [328810] {SWT_Window0} (1312,302,2974,340) patterns=[LegacyIAccessible] legacy=<role=10>
+                    Text "Category" [526112] {Static} (1312,304,1408,336) patterns=[LegacyIAccessible] legacy=<role=41>
+                    ComboBox "Category" [788226] {SWT_Window0} (1422,302,2974,340) patterns=[Value,ScrollItem,LegacyIAccessible] legacy=<role=46 help="Choose a category like 'Customer', 'Customer Web Shop' or..."> offscreen
+                      Edit "Category" [198456] {Edit} (1424,304,2938,338) patterns=[Value,ScrollItem,LegacyIAccessible] legacy=<role=42 help="Choose a category like 'Customer', 'Customer Web Shop' or...">
+                      Button "Open" [198462] {Button} (2938,304,2972,338) patterns=[Invoke,ScrollItem,LegacyIAccessible] legacy=<role=43 help="Choose a category like 'Customer', 'Customer Web Shop' or...">
+                  Text "Company" [591714] {Static} (764,382,866,414) patterns=[LegacyIAccessible] legacy=<role=41>
+                  Edit "Company" [198442] {Edit} (880,356,1698,442) patterns=[Value,Scroll,LegacyIAccessible] legacy=<role=42>
+                  Text "Salutation" [198440] {Static} (758,462,866,494) patterns=[LegacyIAccessible] legacy=<role=41>
+                  Pane "" [198450] {SWT_Window0} (880,458,2974,498) patterns=[LegacyIAccessible] legacy=<role=10>
+                    ComboBox "" [525538] {ComboBox} (880,458,1124,498) patterns=[Value,ExpandCollapse,LegacyIAccessible] value='---' legacy=<role=46 value='---'>
+                      Text "" [] {} (3,3,207,37) patterns=[Value,LegacyIAccessible] value='---' legacy=<role=41 value='---'> offscreen
+                      Button "Open" [DropDown] {} (1091,459,1123,497) patterns=[Invoke,LegacyIAccessible] legacy=<role=43>
+                  Text "First Name Last Name" [197918] {Static} (632,516,866,548) patterns=[LegacyIAccessible] legacy=<role=41>
+                  Pane "" [197886] {SWT_Window0} (880,514,2974,552) patterns=[LegacyIAccessible] legacy=<role=10>
+                    Edit "" [329554] {Edit} (880,514,1298,552) patterns=[Value,LegacyIAccessible] legacy=<role=42>
+                    Edit "" [197924] {Edit} (1312,514,1730,552) patterns=[Value,LegacyIAccessible] legacy=<role=42>
+                  Tab "Addresses" [591638] {SWT_Window0} (632,568,2974,1114) patterns=[Selection,ScrollItem,LegacyIAccessible] legacy=<role=60> offscreen
+                    Pane "" [460572] {SWT_Window0} (636,614,2970,1110) patterns=[LegacyIAccessible] legacy=<role=10>
+                      Pane "" [1312492] {SWT_Window0} (646,624,2960,626) patterns=[LegacyIAccessible] legacy=<role=10>
+                      Tab "Main address" [657148] {SWT_Window0} (646,636,2960,1100) patterns=[Selection,ScrollItem,LegacyIAccessible] legacy=<role=60> offscreen
+                        Button "+" [657122] {Button} (2922,638,2950,680) patterns=[Invoke,LegacyIAccessible] legacy=<role=43>
+                        Pane "" [656456] {SWT_Window0} (650,686,2956,1096) patterns=[LegacyIAccessible] legacy=<role=10>
+                          Text "additional name" [1246776] {Static} (710,698,884,730) patterns=[LegacyIAccessible] legacy=<role=41>
+                          Edit "additional name" [591324] {Edit} (894,696,1886,734) patterns=[Value,LegacyIAccessible] legacy=<role=42>
+                          Text "local consultant" [329198] {Static} (1896,698,2064,730) patterns=[LegacyIAccessible] legacy=<role=41>
+                          Edit "local consultant" [722402] {Edit} (2074,696,2946,734) patterns=[Value,LegacyIAccessible] legacy=<role=42>
+                          Text "Street" [264190] {Static} (822,746,884,778) patterns=[LegacyIAccessible] legacy=<role=41>
+                          Edit "Street" [264126] {Edit} (894,744,1886,782) patterns=[Value,LegacyIAccessible] legacy=<role=42>
+                          Text "E-Mail" [722606] {Static} (1996,746,2064,778) patterns=[LegacyIAccessible] legacy=<role=41>
+                          Edit "E-Mail" [263126] {Edit} (2074,744,2946,782) patterns=[Value,LegacyIAccessible] legacy=<role=42>
+                          Text "Address specification" [264138] {Static} (660,794,884,826) patterns=[LegacyIAccessible] legacy=<role=41>
+                          Edit "Address specification" [788400] {Edit} (894,792,1886,830) patterns=[Value,LegacyIAccessible] legacy=<role=42>
+                          Text "Telephone" [460260] {Static} (1952,794,2064,826) patterns=[LegacyIAccessible] legacy=<role=41>
+                          Edit "Telephone" [198648] {Edit} (2074,792,2946,830) patterns=[Value,LegacyIAccessible] legacy=<role=42>
+                          Text "district" [591328] {Static} (812,842,884,874) patterns=[LegacyIAccessible] legacy=<role=41>
+                          Edit "district" [920446] {Edit} (894,840,1886,878) patterns=[Value,LegacyIAccessible] legacy=<role=42>
+                          Text "2nd phone" [196768] {Static} (1946,842,2064,874) patterns=[LegacyIAccessible] legacy=<role=41>
+                          Edit "2nd phone" [262280] {Edit} (2074,840,2946,878) patterns=[Value,LegacyIAccessible] legacy=<role=42>
+                          Text "ZIP - City" [919492] {Static} (786,890,884,922) patterns=[LegacyIAccessible] legacy=<role=41>
+                          Pane "" [198644] {SWT_Window0} (894,888,1886,926) patterns=[LegacyIAccessible] legacy=<role=10>
+                            Edit "" [197920] {Edit} (894,888,1012,926) patterns=[Value,LegacyIAccessible] legacy=<role=42>
+                            Edit "" [197884] {Edit} (1026,888,1886,926) patterns=[Value,LegacyIAccessible] legacy=<role=42>
+                          Text "Telefax" [263328] {Static} (1990,890,2064,922) patterns=[LegacyIAccessible] legacy=<role=41>
+                          Edit "Telefax" [197698] {Edit} (2074,888,2946,926) patterns=[Value,LegacyIAccessible] legacy=<role=42>
+                          Text "Country" [197702] {Static} (798,940,884,972) patterns=[LegacyIAccessible] legacy=<role=41>
+                          ComboBox "Country" [197700] {ComboBox} (894,936,1886,976) patterns=[Value,ExpandCollapse,LegacyIAccessible] value='United States' legacy=<role=46 value='United States'>
+                            Text "Country" [] {} (3,3,955,37) patterns=[Value,LegacyIAccessible] value='United States' legacy=<role=41 value='United States'> offscreen
+                            Button "Open" [DropDown] {} (1853,937,1885,975) patterns=[Invoke,LegacyIAccessible] legacy=<role=43>
+                          Text "Mobile" [393660] {Static} (1988,940,2064,972) patterns=[LegacyIAccessible] legacy=<role=41>
+                          Edit "Mobile" [328206] {Edit} (2074,936,2946,976) patterns=[Value,LegacyIAccessible] legacy=<role=42>
+                          Text "address type" [262676] {Static} (748,988,884,1020) patterns=[LegacyIAccessible] legacy=<role=41>
+                          Pane "" [197696] {SWT_Window0} (894,986,1886,1024) patterns=[LegacyIAccessible] legacy=<role=10>
+                            Edit "" [262666] {Edit} (894,986,1852,1024) patterns=[Value,LegacyIAccessible] legacy=<role=42>
+                            Button "" [197392] {Button} (1852,986,1886,1024) patterns=[Invoke,LegacyIAccessible] legacy=<role=43>
+                        TabItem "Main address" [] {} (323,318,426,340) patterns=[SelectionItem,ScrollItem,LegacyIAccessible] legacy=<role=37> offscreen
+                    TabItem "Addresses" [] {} (316,284,401,304) patterns=[SelectionItem,ScrollItem,LegacyIAccessible] legacy=<role=37> offscreen
+                    TabItem "Miscellaneous" [] {} (390,284,474,304) patterns=[SelectionItem,ScrollItem,LegacyIAccessible] legacy=<role=37> offscreen
+                    TabItem "Notice" [] {} (474,284,517,304) patterns=[SelectionItem,ScrollItem,LegacyIAccessible] legacy=<role=37> offscreen
+            TabItem "Can’t reach this ..." [] {} (303,108,425,128) patterns=[SelectionItem,ScrollItem,LegacyIAccessible] legacy=<role=37> offscreen
+            TabItem "New Order" [] {} (425,108,511,128) patterns=[SelectionItem,ScrollItem,LegacyIAccessible] legacy=<role=37> offscreen
+            TabItem "New Debtor" [] {} (511,108,649,128) patterns=[SelectionItem,ScrollItem,LegacyIAccessible] legacy=<role=37> offscreen
+          Tab "Documents" [329308] {SWT_Window0} (606,1184,3000,1904) patterns=[Selection,ScrollItem,LegacyIAccessible] legacy=<role=60> offscreen
+            Pane "" [329304] {SWT_Window0} (2832,1186,2910,1224) patterns=[LegacyIAccessible] legacy=<role=10>
+              ToolBar "" [394226] {ToolbarWindow32} (2832,1186,2910,1224) patterns=[ScrollItem,LegacyIAccessible] legacy=<role=22>
+                Button "Create: Order" [] {} (2832,1186,2871,1224) patterns=[Invoke,ScrollItem,LegacyIAccessible] legacy=<role=43>
+                Button "Delete the marked entry" [] {} (2871,1186,2910,1224) patterns=[Invoke,ScrollItem,LegacyIAccessible] legacy=<role=43> disabled
+            ToolBar "" [459874] {ToolbarWindow32} (2910,1186,2988,1224) patterns=[ScrollItem,LegacyIAccessible] legacy=<role=22>
+              Button "Minimize" [] {} (2910,1186,2949,1224) patterns=[Invoke,ScrollItem,LegacyIAccessible] legacy=<role=43>
+              Button "Maximize" [] {} (2949,1186,2988,1224) patterns=[Invoke,ScrollItem,LegacyIAccessible] legacy=<role=43>
+            Pane "Documents" [722792] {SWT_Window0} (612,1230,2994,1898) patterns=[ScrollItem,LegacyIAccessible] legacy=<role=10>
+              Pane "" [852706] {SWT_Window0} (612,1230,2994,1898) patterns=[LegacyIAccessible] legacy=<role=10>
+                Pane "" [1246904] {SWT_Window0} (668,1232,2992,1896) patterns=[LegacyIAccessible] legacy=<role=10>
+                  Pane "" [264078] {SWT_Window0} (668,1232,2992,1290) patterns=[LegacyIAccessible] legacy=<role=10>
+                    Text " " [788606] {Static} (1138,1250,1142,1270) patterns=[LegacyIAccessible] legacy=<role=41>
+                    Pane "" [526414] {SWT_Window0} (2572,1232,2978,1290) patterns=[LegacyIAccessible] legacy=<role=10>
+                      Text "Search:" [526366] {Static} (2582,1244,2658,1276) patterns=[LegacyIAccessible] legacy=<role=41>
+                      Pane "" [329620] {SWT_Window0} (2668,1242,2968,1280) patterns=[LegacyIAccessible] legacy=<role=10>
+                        Edit "" [329612] {Edit} (2668,1242,2968,1280) patterns=[Value,LegacyIAccessible] legacy=<role=42>
+                          Image "" [512] {Static} (2670,1244,2702,1278) patterns=[LegacyIAccessible] legacy=<role=40>
+                  Pane "" [591592] {SWT_Window0} (668,1300,2992,1896) patterns=[LegacyIAccessible] legacy=<role=10>
+            TabItem "Documents" [] {} (303,592,437,612) patterns=[SelectionItem,ScrollItem,LegacyIAccessible] legacy=<role=37> offscreen
+  Pane "" [1968722] {SWT_Window0} (0,84,3000,216) patterns=[LegacyIAccessible] legacy=<role=10>
+    Pane "" [4524672] {ReBarWindow32} (10,94,2990,206) patterns=[LegacyIAccessible] legacy=<role=10>
+      ToolBar "" [2165014] {ToolbarWindow32} (21,98,286,202) patterns=[ScrollItem,LegacyIAccessible] legacy=<role=22>
+        Button "Get new orders and products from web shop" [] {} (21,98,142,201) patterns=[Invoke,ScrollItem,LegacyIAccessible] legacy=<role=43>
+        Button "Print/Export this document as an OpenOffice Writer document" [] {} (142,98,213,201) patterns=[Invoke,ScrollItem,LegacyIAccessible] legacy=<role=43>
+        Button "Save the current contents" [] {} (213,98,284,201) patterns=[Invoke,ScrollItem,LegacyIAccessible] legacy=<role=43> disabled
+      ToolBar "" [2623790] {ToolbarWindow32} (301,98,560,202) patterns=[ScrollItem,LegacyIAccessible] legacy=<role=22>
+        Button "Create: New Order" [] {} (301,98,373,201) patterns=[Invoke,ScrollItem,LegacyIAccessible] legacy=<role=43>
+        Button "Create: New Invoice" [] {} (373,98,460,201) patterns=[Invoke,ScrollItem,LegacyIAccessible] legacy=<role=43>
+        Button "Create: New Delivery Note" [] {} (460,98,558,201) patterns=[Invoke,ScrollItem,LegacyIAccessible] legacy=<role=43>
+      ToolBar "" [394842] {ToolbarWindow32} (575,94,1080,206) patterns=[ScrollItem,LegacyIAccessible] legacy=<role=22>
+        Button "Create a new product" [] {} (575,94,668,205) patterns=[Invoke,ScrollItem,LegacyIAccessible] legacy=<role=43>
+        SplitButton "Create a new contact" [] {} (668,94,798,205) patterns=[Invoke,ScrollItem,LegacyIAccessible] legacy=<role=62>
+        Button "Create: New Expenditure" [] {} (798,94,990,205) patterns=[Invoke,ScrollItem,LegacyIAccessible] legacy=<role=43>
+        Button "Create: New Receipt Voucher" [] {} (990,94,1079,205) patterns=[Invoke,ScrollItem,LegacyIAccessible] legacy=<role=43>
+      ToolBar "" [460234] {ToolbarWindow32} (1095,98,2990,202) patterns=[ScrollItem,LegacyIAccessible] legacy=<role=22>
+        Button "Open the web site of the parcel service." [] {} (1095,98,1168,201) patterns=[Invoke,ScrollItem,LegacyIAccessible] legacy=<role=43>
+        Button "Open the project web site www.fakturama.info" [] {} (1168,98,1239,201) patterns=[Invoke,ScrollItem,LegacyIAccessible] legacy=<role=43>
+        Button "Open the calculator" [] {} (1239,98,1356,201) patterns=[Invoke,ScrollItem,LegacyIAccessible] legacy=<role=43>
+  TitleBar "" [] {} (32,-10,3000,45) patterns=[Value,LegacyIAccessible] value='Fakturama - C:\\Users\\USER' legacy=<role=1 value='Fakturama - C:\\Users\\USER' desc='Displays the name of the window and contains controls to ...'>
+    MenuBar "System" [MenuBar] {} (0,0,44,44) patterns=[LegacyIAccessible] legacy=<role=2 desc='Contains commands to manipulate the window'>
+      MenuItem "System" [] {} (0,0,44,44) patterns=[ExpandCollapse,LegacyIAccessible] legacy=<role=12>
+    Button "Minimize" [] {} (2719,0,2813,44) patterns=[Invoke,LegacyIAccessible] legacy=<role=43 desc='Moves the window out of the way'>
+    Button "Restore" [] {} (2813,0,2905,44) patterns=[Invoke,LegacyIAccessible] legacy=<role=43 desc='Puts a minimized or maximized window back to normal'>
+    Button "Close" [] {} (2905,0,3000,44) patterns=[Invoke,LegacyIAccessible] legacy=<role=43 desc='Closes the window'>
+  MenuBar "Application" [MenuBar] {} (0,45,3000,83) patterns=[LegacyIAccessible] legacy=<role=2 desc='Contains commands to manipulate the current view or document'>
+    MenuItem "File" [] {} (0,45,65,83) patterns=[ExpandCollapse,LegacyIAccessible] legacy=<role=12>
+    MenuItem "Edit" [] {} (65,45,133,83) patterns=[ExpandCollapse,LegacyIAccessible] legacy=<role=12>
+    MenuItem "Data" [] {} (133,45,210,83) patterns=[ExpandCollapse,LegacyIAccessible] legacy=<role=12>
+    MenuItem "New" [] {} (210,45,286,83) patterns=[ExpandCollapse,LegacyIAccessible] legacy=<role=12>
+    MenuItem "Extra" [] {} (286,45,365,83) patterns=[ExpandCollapse,LegacyIAccessible] legacy=<role=12>
+    MenuItem "Window" [] {} (365,45,480,83) patterns=[ExpandCollapse,LegacyIAccessible] legacy=<role=12>
+    MenuItem "Help" [] {} (480,45,558,83) patterns=[ExpandCollapse,LegacyIAccessible] legacy=<role=12>

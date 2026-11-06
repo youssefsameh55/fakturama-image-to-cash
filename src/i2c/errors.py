@@ -30,3 +30,23 @@ class ProviderError(I2CError):
 
 class ConfigError(I2CError):
     """Missing or invalid configuration (.env / settings.yaml)."""
+
+
+class UIError(I2CError):
+    """A UI interaction failed technically (control missing, value did not stick)."""
+
+
+class UITimeout(UIError):
+    """A polling wait expired. `cause` is the last exception the condition raised, if any."""
+
+    def __init__(self, message: str, cause: BaseException | None = None) -> None:
+        super().__init__(message if cause is None else f"{message} (last error: {cause!r})")
+        self.cause = cause
+
+
+class ElementNotFound(UIError):
+    """No control matched the query."""
+
+
+class AmbiguousElement(UIError):
+    """More than one control matched a query that must be unique."""

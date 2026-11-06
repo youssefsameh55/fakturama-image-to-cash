@@ -13,7 +13,9 @@ See `PLAN.md` for the full design. `DESIGN.md` (Part 1) will be written after th
 |---|---|
 | M1 Skeleton + UIA probe tool | done |
 | M2 Extraction + offline tests | done (offline); live call pending |
-| M3–M7 UI toolkit and flow | not started (waiting for probe output) |
+| UIA probe of 10 screens | done (`artifacts/probe/`, findings below) |
+| M3 UI toolkit (find/wait/input/ocr/table/evidence) | done offline; live table read pending |
+| M4–M7 Flow stages | not started |
 | M8 Deliverables | not started |
 
 ## Setup
@@ -32,7 +34,8 @@ copy .env.example .env   # then fill in ANTHROPIC_API_KEY (or GEMINI_API_KEY + L
 ```powershell
 python -m i2c extract samples/order_01.png            # extraction only -> artifacts/<run-id>/extracted.json
 python tools/dump_tree.py --list                       # list Fakturama's top-level windows
-python tools/dump_tree.py --window ".*Fakturama.*" --out artifacts/probe/main
+python tools/dump_tree.py --window ".*Fakturama.*" --delay 5 --out artifacts/probe/main
+python tools/read_table.py --view "VATs" --kind vats   # live: read a table via UIA rect + OCR
 pytest -q                                              # offline tests
 ```
 
@@ -52,6 +55,37 @@ See `PLAN.md` §9 (G1–G6). Additional implementation decisions:
   Sonnet 5.5), the provider retries once with `tool_choice=auto`.
 - **VAT total tolerance is ±0.01 per line**, because Fakturama may round VAT per line.
 - **Exit codes:** 0 ok · 2 usage · 3 manual review · 4 provider/config error.
+
+### UI layer (from the probe)
+
+- **Tables are read with OCR, as expected.** Fakturama's NatTable tables (selector dialogs,
+  Items, Documents, VATs, terms of payment) show up in UIA as empty `Pane`s with no header or
+  cell children. UIA still supplies the table's rectangle: it is the largest pane whose only
+  children are scrollbars. OCR runs inside that rectangle only.
+- **Column boundaries come from the grid lines, not from header text positions.** Header text is
+  centred in some tables and left-aligned in others, so midpoints between header words would
+  put long cell text in the wrong column. The reader finds the vertical grid lines in the header
+  strip of the captured image instead, with a header-gap fallback.
+- **OCR headers are fuzzy-matched to the names in `settings.yaml`.** For example, "Com an" maps
+  to "Company" and "Cit" to "City". Exact matches are assigned first, so "Name" never takes
+  "First Name".
+- **No OCR upscaling (`ocr.upscale: 1`)**, unlike the plan's 2×. On the 3000-px-wide test screen,
+  upscaling the probe screenshots made recognition worse. The setting is still configurable.
+- **`%` misreads are repaired.** Windows OCR reads "0.00 %" as "0.00 0/0". The repair only applies
+  to a standalone token, so dates are left alone.
+- **Controls are found by label.** SWT names many inputs after their label (`Edit "Cust.Ref."`);
+  the rest (No., Date, the Net/Gross combo) are found by geometry, as the nearest input to the
+  right of the `Text` label. Labels that occur twice ("VAT") are told apart by control type. Forms
+  with two columns and one label for two fields ("ZIP - City") take only the inputs before the
+  next label.
+- **Clicks use the real mouse at the centre of the control's UIA rectangle.** UIA `Invoke` on an
+  SWT button that opens a modal dialog can block until the dialog closes.
+- **Text input tries UIA ValuePattern first, then the keyboard, and every value is read back.**
+  The order is configurable (`input.text_methods`), because SWT data binding may only commit
+  values entered with real key input.
+- **The fresh Fakturama database has only VAT "Tax-free 0%" and payment term "Cash".** So creating
+  the VAT rate and the payment method is required for the sample order, not an optional extra.
+- **The Debtor's payment method is on the Miscellaneous tab.** There is no Payment tab.
 
 ## Skipped / not implemented
 

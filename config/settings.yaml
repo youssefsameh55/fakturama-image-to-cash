@@ -13,9 +13,21 @@ timeouts:            # seconds
   poll_interval: 0.25
 
 ocr:
-  upscale: 2
+  upscale: 1                     # measured on probe screenshots: 2x upscaling hurts on a high-DPI screen
   language: en-US
   row_merge_tolerance_px: 8      # words whose centre-y differ by less than this are one row
+
+input:
+  text_methods: [value, keys]    # order of attempts for text fields; each is verified by read-back
+  date_pattern: "{mon} {day}, {year}"   # probe: Fakturama shows 'Nov 7, 2026'
+
+tables:                          # canonical column headers (OCR text is fuzzy-matched to these)
+  select_address: ["No.", "First Name", "Name", "Company", "ZIP", "City", "address type"]
+  select_product: ["Item No.", "Name", "Description", "Stock", "Price", "VAT"]
+  items: ["Pos.", "Qty.", "Item No.", "Picture", "Name", "Description", "VAT", "U.Price", "Discount", "Price"]
+  documents: ["Document", "Date", "Name", "Cust.Ref.", "State", "Total", "Printed"]
+  vats: ["Standard", "Name", "Description", "Value"]
+  payments: ["Standard", "Name", "Description", "Discount", "Disc. Days", "Net Days"]
 
 extraction:                      # PROMPT_VERSION lives in src/i2c/extract/prompt.py (it versions code)
   max_image_long_side: 1568
@@ -36,45 +48,83 @@ vat:
   name_template: "VAT {percent}%"
   code: "S"
 
-labels:                                # probe: confirm every value against real UIA names
-  toolbar:
-    order: "Order"
-  left_panel:
+labels:                                # confirmed against UIA probe dumps (artifacts/probe, 2026-11-07)
+  toolbar:                             # Button names are the tooltips
+    new_order: "Create: New Order"
+    save: "Save the current contents"
+  left_panel:                          # Text controls in the Navigation View
     new_contact: "New Contact"
-  menu:
-    data: "Data"
+    new_product: "New product"
     documents: "Documents"
-    terms_of_payment: "Payment"
     vats: "VATs"
+    terms_of_payment: "terms of payment"
+  views:                               # list views open as panes with these names
+    documents: "Documents"
+    vats: "VATs"
+    terms_of_payment: "terms of payment"
   order_editor:
+    tab: "New Order"
+    number: "No."
     date: "Date"
+    price_mode_values: ["Net", "Gross"]   # unnamed ComboBox right of the date
+    price_mode_net: "Net"
     cust_ref: "Cust.Ref."
-    net_gross: "Net"
+    vat_mode: "VAT"                        # ComboBox "VAT"
     with_vat: "With VAT"
     addresses: "Addresses"
     items: "Items"
-    total_net: "Total Net"
-    vat: "VAT"
+    total_gross: "Total Gross"
+    vat_total: "VAT"                       # Edit "VAT" (totals block)
     total: "Total"
+    shipping: "Shipping"
     shipping_free: "Free of shipping costs"
     follow_up: "Create a follow-up document"
-    follow_up_invoice: "Invoice"
+    follow_up_invoice: "Invoice"           # Button in the follow-up ToolBar (disabled until saved)
   dialogs:
     select_address: "Select the address"
     select_product: "Select a product"
+    search: "Search:"
     ok: "OK"
     cancel: "Cancel"
   debtor_editor:
-    company: "Company"
-    first_name: "First Name"
-    last_name: "Name"
+    tab: "New Debtor"
     tab_addresses: "Addresses"
-    tab_misc: "Miscellaneous"
-    tab_payment: "Payment"
+    tab_main_address: "Main address"
+    tab_misc: "Miscellaneous"              # holds the Payment combo (there is no Payment tab)
+    customer_id: "Customer ID"
+    company: "Company"
+    name: "First Name Last Name"           # one label, two Edits
+    street: "Street"
+    zip_city: "ZIP - City"                 # one label, two Edits
+    country: "Country"
+    email: "E-Mail"
+    phone: "Telephone"
+    additional_name: "additional name"
+    address_spec: "Address specification"
+    district: "district"
     alias: "Alias name"
-  invoice_editor:
-    paid: "paid"
-    payment_date: "Date"
+    payment: "Payment"
+    net_gross: "Net or Gross"
+  vat_editor:
+    tab: "New TAX Rate"
+    name: "Name"
+    description: "Description"
     value: "Value"
+    category: "Category"
+  payment_editor:
+    tab: "New Term of Payment"
+    name: "Name"
+    description: "Description"
+    net_days: "Net Days"
+  product_editor:
+    tab: "New product"
+    item_number: "Item Number"
+    name: "Name"
+    vat: "VAT"
+  invoice_editor:
+    tab: "New Invoice"
+    paid: "paid"                           # CheckBox
+    due_days: "Due Days"
+    pay_until: "Pay Until"
   common:
-    save: "Save"
+    save: "Save the current contents"
