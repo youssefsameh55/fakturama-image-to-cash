@@ -159,6 +159,21 @@ def find_window(title_regex: str, app_regex: str) -> UIAElementInfo:
     return matches[0]
 
 
+def bring_to_front(info: UIAElementInfo) -> None:
+    """Best effort: raise the Fakturama window so the screenshot shows it, not the terminal.
+
+    Windows may refuse SetForegroundWindow from a background process; --delay is the fallback.
+    """
+    try:
+        hwnd = info.handle
+        if not hwnd:
+            return
+        top = ctypes.windll.user32.GetAncestor(hwnd, 2)  # GA_ROOT: dialogs -> their own root
+        ctypes.windll.user32.SetForegroundWindow(top or hwnd)
+    except Exception:
+        pass
+
+
 def screenshot(info: UIAElementInfo, path: Path) -> bool:
     try:
         import mss
@@ -183,6 +198,8 @@ def main(argv: list[str] | None = None) -> int:
     ap.add_argument("--depth", type=int, default=20, help="max tree depth (default 20)")
     ap.add_argument("--max-children", type=int, default=300, help="max children listed per node")
     ap.add_argument("--out", help="output path prefix, e.g. artifacts/probe/main -> main.txt + main.png")
+    ap.add_argument("--delay", type=int, default=0,
+                    help="seconds to wait before capturing, so you can bring Fakturama to the front")
     args = ap.parse_args(argv)
 
     if args.list:
@@ -192,6 +209,10 @@ def main(argv: list[str] | None = None) -> int:
         ap.error("--window is required unless --list is given")
 
     info = find_window(args.window, args.app)
+    bring_to_front(info)
+    for remaining in range(args.delay, 0, -1):
+        print(f"Capturing in {remaining}s - switch to Fakturama now...", flush=True)
+        time.sleep(1)  # probe tool only: human countdown, not UI synchronisation
     t0 = time.perf_counter()
     lines: list[str] = []
     stats = {"nodes": 0}
