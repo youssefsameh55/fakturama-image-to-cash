@@ -12,10 +12,11 @@ See `PLAN.md` for the full design. `DESIGN.md` (Part 1) will be written after th
 | Milestone | State |
 |---|---|
 | M1 Skeleton + UIA probe tool | done |
-| M2 Extraction + offline tests | done (offline); live call pending |
+| M2 Extraction + offline tests | done; live call matches the fixture exactly (Gemini, 1 attempt) |
 | UIA probe of 10 screens | done (`artifacts/probe/`, findings below) |
 | M3 UI toolkit (find/wait/input/ocr/table/evidence) | done; checked live on VATs, terms of payment and Select the address |
-| M4–M7 Flow stages | not started |
+| M4 Run framework + stage `order` | code done, offline-tested; live run pending |
+| M5–M7 Flow stages | not started |
 | M8 Deliverables | not started |
 
 ## Setup
@@ -33,6 +34,7 @@ copy .env.example .env   # then fill in ANTHROPIC_API_KEY (or GEMINI_API_KEY + L
 
 ```powershell
 python -m i2c extract samples/order_01.png            # extraction only -> artifacts/<run-id>/extracted.json
+python -m i2c run --from-json <extracted.json> --stop-after order   # drive Fakturama, stage by stage
 python tools/dump_tree.py --list                       # list Fakturama's top-level windows
 python tools/dump_tree.py --window ".*Fakturama.*" --delay 5 --out artifacts/probe/main
 python tools/read_table.py --view "VATs" --kind vats   # live: read a table via UIA rect + OCR

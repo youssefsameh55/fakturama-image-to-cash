@@ -78,30 +78,59 @@ def set_text(ctrl: object, text: str, *, methods: tuple[str, ...] = ("value", "k
     raise UIError(f"could not set text {text!r}: " + "; ".join(errors))
 
 
-def select_combo(ctrl: object, text: str, timeout: float = 5.0) -> str:
-    """Select the item whose text equals `text` exactly; verify via the combo's value."""
+def _collapse(ctrl: object) -> None:
+    try:
+        if ctrl.is_expanded():  # type: ignore[attr-defined]
+            ctrl.collapse()  # type: ignore[attr-defined]
+    except Exception:  # noqa: BLE001
+        pass
+
+
+def _select_by_arrows(ctrl: object, text: str, max_items: int, step_timeout: float) -> bool:
+    """Keyboard fallback for read-only combos: HOME, then DOWN until the value equals `text`.
+    Every step is verified by reading the value; the visited values are what the combo offers."""
+    ctrl.set_focus()  # type: ignore[attr-defined]
+    ctrl.type_keys("{HOME}", set_foreground=True)  # type: ignore[attr-defined]
+    seen: list[str] = []
+    for _ in range(max_items):
+        value = get_value(ctrl)
+        if value == text:
+            return True
+        if seen and value == seen[-1]:
+            break  # end of list: DOWN no longer changes the value
+        seen.append(value)
+        ctrl.type_keys("{DOWN}", set_foreground=True)  # type: ignore[attr-defined]
+        try:
+            wait_until(lambda: get_value(ctrl) != value, step_timeout, desc="combo to move")
+        except UITimeout:
+            break
+    log.debug("combo items seen while searching %r: %s", text, seen)
+    return get_value(ctrl) == text
+
+
+def select_combo(ctrl: object, text: str, timeout: float = 5.0, max_items: int = 60) -> str:
+    """Select the item whose text equals `text` exactly; verify via the combo's value.
+
+    1. pywinauto select (expand + pick list item), 2. arrow-key walk (read-only SWT combos).
+    """
     if get_value(ctrl) == text:
         return text
     errors: list[str] = []
     try:
-        ctrl.select(text)  # type: ignore[attr-defined]  # pywinauto: expand + select list item
+        ctrl.select(text)  # type: ignore[attr-defined]
+        wait_until(lambda: get_value(ctrl) == text, timeout, desc=f"combo value {text!r}")
+        _collapse(ctrl)
+        return text
     except Exception as exc:  # noqa: BLE001
         errors.append(f"select: {exc!r}")
-        try:
-            _set_via_keys(ctrl, text)
-        except Exception as exc2:  # noqa: BLE001
-            errors.append(f"keys: {exc2!r}")
+        _collapse(ctrl)
     try:
-        wait_until(lambda: get_value(ctrl) == text, timeout, desc=f"combo value {text!r}")
-    except UITimeout as exc:
-        raise UIError(f"combo did not take {text!r} (now {get_value(ctrl)!r}; {errors})") from exc
-    finally:
-        try:
-            if ctrl.is_expanded():  # type: ignore[attr-defined]
-                ctrl.collapse()  # type: ignore[attr-defined]
-        except Exception:  # noqa: BLE001
-            pass
-    return text
+        if _select_by_arrows(ctrl, text, max_items, step_timeout=1.0):
+            return text
+        errors.append("arrows: item not found")
+    except Exception as exc:  # noqa: BLE001
+        errors.append(f"arrows: {exc!r}")
+    raise UIError(f"combo did not take {text!r} (now {get_value(ctrl)!r}; {errors})")
 
 
 def get_checked(ctrl: object) -> bool:
