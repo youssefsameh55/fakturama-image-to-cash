@@ -17,8 +17,7 @@ ocr:
   language: en-US
   row_merge_tolerance_px: 8      # words whose centre-y differ by less than this are one row
 
-extraction:
-  prompt_version: "v1"
+extraction:                      # PROMPT_VERSION lives in src/i2c/extract/prompt.py (it versions code)
   max_image_long_side: 1568
   max_tokens: 4096
 
