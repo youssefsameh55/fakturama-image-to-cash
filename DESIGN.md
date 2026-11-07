@@ -134,7 +134,31 @@ tolerance can never cause a silent wrong pick.
 In every case Fakturama is left as it is for a human, and `summary.json` records the status, the
 stopping step, the entities selected or created, every step's verification, warnings and timings.
 
-## 6. Trade-offs & alternatives considered
+## 6. Testing
+
+**Offline: 129 automated tests** (`pytest`, no Fakturama needed, run after every change):
+- **Unit tests:** money math (half-up rounding, gross price, mixed VAT rates), parsing into the data
+  model, every validation rule (the sample's correct data plus one deliberate error per test), and
+  matching (all four outcomes per entity, truncated cells, OCR look-alikes).
+- **Extraction service with a fake LLM provider:** first-try success, cache hit, retry with
+  feedback, and two failures → manual review with nothing cached.
+- **Replay tests on real recordings:** control lookups run against real UIA probe dumps of the
+  Fakturama screens, and table reading runs real Windows OCR on screenshots captured in live runs
+  where reading had failed (regression tests for those bugs).
+- **UI helpers and runner with fake controls:** waits, text-entry fallbacks, the focus guard,
+  arrow-key dates, and the runner's exit codes (ok / manual review / error).
+
+**Live tests against Fakturama** (run by hand; evidence in `artifacts/<run-id>/`):
+- end to end on the sample with all master data existing: `status: ok` in 63.5 s;
+- create paths (new Debtor with two addresses, payment method, VAT, products) on an empty database,
+  stage by stage;
+- recreation after master data was deleted by hand (products; payment method for an existing Debtor).
+
+Each failure found live was fixed and, where possible, recorded as a replay test. Not yet run live:
+the two extra samples (new 7 % VAT and Credit Card; UNPAID invoice) and the negative ZIP-conflict
+case, which is covered by unit tests only.
+
+## 7. Trade-offs & alternatives considered
 
 | Alternative | Why not (or not primarily) |
 |---|---|
@@ -146,7 +170,7 @@ stopping step, the entities selected or created, every step's verification, warn
 | ValuePattern for all input | Fast, but shown not to persist in SWT |
 | Full-window UIA reads everywhere | Simple, but 0.7–0.9 s each; pane-scoped reads and `FindFirst` cut a run from 156 s to 63.5 s with every check kept |
 
-## 7. Risks & mitigations
+## 8. Risks & mitigations
 
 | Risk | Mitigation |
 |---|---|
@@ -158,7 +182,7 @@ stopping step, the entities selected or created, every step's verification, warn
 | LLM misextraction | Deterministic validation, one retry, then manual review |
 | Re-runs creating duplicates | Master data is matched and reused; no duplicate lines; no stale editors. A duplicate-order guard (same external reference) is future work |
 
-## 8. Decisions on ambiguities in the brief
+## 9. Decisions on ambiguities in the brief
 
 - A delivery address different from billing becomes a second Debtor address with the Delivery role.
 - Fakturama's proposed Customer ID is kept; the printed customer ID is extracted but not used.
