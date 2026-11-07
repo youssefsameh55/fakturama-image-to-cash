@@ -1,1 +1,1 @@
-"""Flow steps (milestones M4-M7): order, debtor, payment_method, vat, product, lines, invoice, verify."""
+"""Flow stages (each a list of Steps run by runner.py): order, debtor, products, save_order, invoice."""

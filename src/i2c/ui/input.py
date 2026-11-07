@@ -1,7 +1,7 @@
 """Input helpers (D10): every setter reads the value back and fails loudly if it didn't stick.
 
-Text: UIA ValuePattern first, then keyboard (focus, select all, type). The order is configurable
-(`input.text_methods`) because SWT may only commit data-bound values on real key input.
+Text: the methods in `input.text_methods` are tried in order (configured: real keystrokes first,
+then UIA ValuePattern), because SWT only commits data-bound values reliably on real key input.
 Clicks use the real mouse at the centre of the UIA rectangle: UIA Invoke on an SWT button that
 opens a modal dialog can block until the dialog closes.
 """

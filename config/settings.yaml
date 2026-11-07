@@ -1,5 +1,4 @@
-# UI label strings, timeouts and mappings.
-# Labels marked "probe" are provisional until confirmed by tools/dump_tree.py output.
+# UI label strings, timeouts and mappings. Labels were taken from tools/dump_tree.py probe dumps.
 
 app:
   window_title_regex: ".*Fakturama.*"   # overridden by FAKTURAMA_WINDOW_TITLE in .env
@@ -38,7 +37,6 @@ tables_checked:                  # columns some check reads; OCR re-reads of dro
   items: ["Qty.", "Item No.", "VAT", "U.Price", "Discount", "Price"]
   documents: ["Document", "Date", "Cust.Ref.", "State", "Total"]
   vats: ["Name", "Description", "Value"]
-  payments: ["Name", "Description"]
   debtors: ["No.", "First Name", "Name", "Company"]
   payments: ["Standard", "Name", "Description", "Discount", "Disc. Days", "Net Days"]
 
