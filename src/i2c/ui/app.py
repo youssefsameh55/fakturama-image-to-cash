@@ -73,6 +73,39 @@ class FakturamaApp:
     def snapshot(self, root: object | None = None, max_depth: int = 25) -> Snapshot:
         return Snapshot.take(root or self._require(), max_depth)
 
+    def find_first(self, control_type: str, name: str, root: object | None = None):  # noqa: ANN201
+        """One control by type + exact name via UIA FindFirst (searched inside UIA, early exit;
+        measured ~6 ms vs ~0.7-0.9 s for a full window snapshot of Fakturama). Control view,
+        same tree as snapshots: inactive editors are not in it. Returns UIAElementInfo or None."""
+        from pywinauto.uia_defines import IUIA
+        from pywinauto.uia_element_info import UIAElementInfo
+
+        from i2c.perf import timed
+
+        u = IUIA()
+        cond = u.iuia.CreateAndCondition(
+            u.iuia.CreatePropertyCondition(u.UIA_dll.UIA_ControlTypePropertyId, u.known_control_types[control_type]),
+            u.iuia.CreatePropertyCondition(u.UIA_dll.UIA_NamePropertyId, name))
+        base = getattr(root, "element_info", root) or self._require().element_info
+        with timed("uia_find_first"):
+            el = base.element.FindFirst(u.tree_scope["descendants"], cond)
+        return UIAElementInfo(el) if el else None
+
+    def names(self, control_type: str) -> list[str]:
+        """Names of all controls of one type (e.g. every TabItem), in one UIA FindAll with the
+        Name cached - instead of a full-window snapshot just to list tab names."""
+        from pywinauto.uia_defines import IUIA
+
+        from i2c.perf import timed
+
+        u = IUIA()
+        cond = u.iuia.CreatePropertyCondition(u.UIA_dll.UIA_ControlTypePropertyId, u.known_control_types[control_type])
+        request = u.iuia.CreateCacheRequest()
+        request.AddProperty(u.UIA_dll.UIA_NamePropertyId)
+        with timed("uia_names"):
+            found = self._require().element_info.element.FindAllBuildCache(u.tree_scope["descendants"], cond, request)
+        return [found.GetElement(i).CachedName or "" for i in range(found.Length)] if found else []
+
     def find_dialog(self, title: str):  # noqa: ANN201 - pywinauto wrapper or None
         """A modal dialog by exact title. Probe: SWT dialogs are child Windows of the main
         window; top-level windows of the same process are checked too."""

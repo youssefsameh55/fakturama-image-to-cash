@@ -16,7 +16,7 @@ from i2c.flow.context import RunContext
 from i2c.flow.debtor import _address_box_text, _expect_address, show_address_tab
 from i2c.flow.order import _price_mode_combo
 from i2c.flow.runner import Step
-from i2c.flow.save_order import check_document, documents_by_cust_ref, state_is, verify_lines, verify_totals
+from i2c.flow.save_order import check_document, documents_by_number, state_is, verify_lines, verify_totals
 from i2c.calc import close, parse_decimal
 from i2c.match import cell_matches, norm
 from i2c.models import PaymentStatus
@@ -113,7 +113,8 @@ def set_payment(ctx: RunContext) -> str:
         raise ManualReviewRequired("PAID without a payment date", ctx.current_step)
     set_checkbox(paid_box.wrapper(), True)
     at = _L(ctx, "invoice_editor.paid_at")
-    wait_until(lambda: _editor(ctx).find("Text", name=at), ctx.timeout(), ctx.interval, desc="payment date field")
+    wait_until(lambda: ctx.app.find_first("Text", at) is not None, ctx.timeout(), ctx.interval,
+               desc="payment date field")
     ed = _editor(ctx)
     date_edit = ed.by_label(at, ["Edit"])
     set_date_by_arrows(date_edit.wrapper(), pay.payment_date)
@@ -136,12 +137,12 @@ def set_payment(ctx: RunContext) -> str:
 
 
 def save_invoice(ctx: RunContext) -> str:
-    before = {n.name for n in ctx.snapshot().find("TabItem")}
+    before = set(ctx.app.names("TabItem"))
     _editor(ctx)
     save_once(ctx, f"invoice {ctx.results.get('invoice_no')}")
 
     def renamed() -> str | None:
-        new = [t for t in {n.name for n in ctx.snapshot().find("TabItem")} - before if not t.startswith("*")]
+        new = [t for t in set(ctx.app.names("TabItem")) - before if not t.startswith("*")]
         return new[0] if len(new) == 1 else None
 
     try:
@@ -161,13 +162,13 @@ def save_invoice(ctx: RunContext) -> str:
 
 def verify_documents(ctx: RunContext) -> str:
     """Brief 5.5: the invoice row (state + total) and the source order (still open, same Cust.Ref.
-    and total) - both verified from ONE search of Data > Documents for the Cust.Ref."""
+    and total), each found in Data > Documents by its own number."""
     o = ctx.order
     inv_no, order_no = ctx.results.get("invoice_no"), ctx.results.get("order_no")
-    rows, ref_by_filter = documents_by_cust_ref(ctx, [inv_no, order_no])
+    rows = documents_by_number(ctx, [inv_no, order_no])
     inv, order = rows[inv_no], rows[order_no]
     warnings = ctx.results.setdefault("warnings", [])
-    ref = None if ref_by_filter else o.external_reference
+    ref = o.external_reference
     problems = check_document(inv, None, ref, o.totals.gross, warnings)          # invoice date = today
     want_state = "paid" if o.payment.status is PaymentStatus.PAID else "unpaid"
     if not state_is(ctx, inv, want_state):
@@ -180,9 +181,8 @@ def verify_documents(ctx: RunContext) -> str:
     if order_problems:
         raise UIError(f"order {order_no} changed in Documents: {order_problems} (row {order})")
     ctx.results["invoice_document"], ctx.results["order_document"] = inv, order
-    how = "both listed under the Cust.Ref. search" if ref_by_filter else "Cust.Ref. checked in the editors"
     return (f"invoice {inv_no}: {inv.get('State')!r} total {inv.get('Total')}; order {order_no} still "
-            f"{order.get('State')!r} total {order.get('Total')} ({how})")
+            f"{order.get('State')!r} total {order.get('Total')}")
 
 
 STEPS = [

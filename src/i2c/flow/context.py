@@ -56,7 +56,17 @@ class RunContext:
         return self.app.snapshot()
 
     def editor(self, pane_name: str, snap: Snapshot | None = None) -> Snapshot:
-        """Fresh snapshot scoped to the editor/view pane named `pane_name` (e.g. 'New Order')."""
+        """Fresh snapshot scoped to the editor/view pane named `pane_name` (e.g. 'New Order').
+
+        Without `snap`: the pane is located with UIA FindFirst and only ITS subtree is read -
+        a full-window snapshot (every open editor and view) cost ~0.7-0.9 s (measured live).
+        FindFirst returns the first match in tree order = the outermost pane of that name.
+        """
+        if snap is None and self.app is not None:
+            info = self.app.find_first("Pane", pane_name)
+            if info is None:
+                raise ElementNotFound(f"editor/view pane {pane_name!r} not found")
+            return Snapshot.take(info)
         snap = snap or self.snapshot()
         panes = snap.find("Pane", name=pane_name)
         if not panes:

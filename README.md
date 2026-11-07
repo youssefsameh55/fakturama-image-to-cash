@@ -165,14 +165,19 @@ See `PLAN.md` §9 (G1–G6). Additional implementation decisions:
   appears in the Items table; otherwise it stops.
 - **The mouse is parked on the title bar after each click.** Hover tooltips covered the Items rows
   that are read by OCR.
-- **Speed without dropping required checks.** Each brief step's ✔ check is kept, including
-  4.1's pre-save re-check of addresses and lines. What's cheaper: tab label positions are
-  remembered while the folder's tab list (from UIA) is unchanged, so a stale position is never
-  clicked, and every switch is still verified. Data › Documents is searched once for the order's
-  Cust.Ref.: Fakturama's own filter then confirms the Cust.Ref. (4.5/5.5) with no OCR of that code,
-  and one read covers both order and invoice. OCR re-reads of dropped cells are limited to columns
-  some check reads (`tables_checked`). A stable read is 2 identical reads (D9). Screenshots are
-  encoded in the background.
+- **Speed without dropping required checks.** Every brief step's ✔ check is kept, including
+  4.1's pre-save re-check of addresses and lines. Measured live: about 75% of a run went into
+  reading Fakturama's UI tree, each full-window read taking 0.7–0.9 s and growing with every open
+  editor and view; OCR (about 4 s per run) and screenshots (about 3 s) were minor. So:
+  single-control lookups use UIA `FindFirst` (about 6 ms) and live property reads (the Save
+  button's enabled state is polled directly). Editor and view reads cover only that pane's
+  subtree, and tab names come from one `FindAll`. Full-window reads remain only for tab switching
+  and maximizing a view. Tab label positions are remembered while the tab list is unchanged
+  (verified after each switch). OCR recovery is limited to checked columns, and stable reads are
+  2 identical reads (D9). `summary.json` → `perf` counts the UIA reads per calling function.
+- **Documents are found by their number** (order, then invoice). The Cust.Ref. shown there is
+  OCR'd and compared loosely, with a warning on mismatch; its exact value is re-read via UIA from
+  the saved editor.
 - **Polling uses cheap reads.** While waiting for a cell value, the run does one OCR pass of the
   already known table rectangle (about 0.1–0.2 s) instead of a full UIA walk of the window (about
   1.5 s). The final verification still uses a stable double read.

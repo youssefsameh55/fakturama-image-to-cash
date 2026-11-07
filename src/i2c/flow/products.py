@@ -84,7 +84,7 @@ def _ensure_vat(ctx: RunContext, p: Decimal) -> str:
 
     click(ctx.snapshot().one("Button", _L(ctx, "views.new_vat_button")).wrapper())
     editor = _L(ctx, "vat_editor.tab")
-    wait_until(lambda: ctx.snapshot().find("Pane", name=editor), ctx.timeout("window"), ctx.interval,
+    wait_until(lambda: ctx.app.find_first("Pane", editor) is not None, ctx.timeout("window"), ctx.interval,
                desc="New TAX Rate editor")
     ed = ctx.editor(editor)
     m = ctx.text_methods
@@ -245,12 +245,11 @@ def _create_product(ctx: RunContext, item: Item) -> None:
     if item.unit_net_price is None or item.vat_percent is None:
         raise ManualReviewRequired(f"item {item.sku} lacks unit price or VAT", ctx.current_step)
     editor = _L(ctx, "product_editor.tab")
-    snap = ctx.snapshot()
-    if [n for n in snap.find("TabItem") if n.name.lstrip("*") == editor]:
+    if [n for n in ctx.app.names("TabItem") if n.lstrip("*") == editor]:
         raise ManualReviewRequired(f"an unsaved '{editor}' editor is already open; close it and re-run",
                                    ctx.current_step)
-    click(snap.one("Text", _L(ctx, "left_panel.new_product")).wrapper())
-    wait_until(lambda: ctx.snapshot().find("Pane", name=editor), ctx.timeout("window"), ctx.interval,
+    click(ctx.snapshot().one("Text", _L(ctx, "left_panel.new_product")).wrapper())
+    wait_until(lambda: ctx.app.find_first("Pane", editor) is not None, ctx.timeout("window"), ctx.interval,
                desc="New product editor")
     ed = ctx.editor(editor)
     m = ctx.text_methods

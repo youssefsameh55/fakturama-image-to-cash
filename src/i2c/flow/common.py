@@ -37,17 +37,26 @@ def park_mouse(ctx: RunContext) -> None:
 
 
 def save_enabled(ctx: RunContext) -> bool:
-    return ctx.snapshot().one("Button", ctx.label("toolbar.save")).enabled
+    """Live IsEnabled of the toolbar Save button (one COM call; the button is found once)."""
+    el = ctx.results.get("_save_button")
+    if el is None:
+        el = ctx.app.find_first("Button", ctx.label("toolbar.save"))
+        if el is None:
+            raise UIError("toolbar Save button not found")
+        ctx.results["_save_button"] = el
+    return bool(el.element.CurrentIsEnabled)
 
 
 def save_once(ctx: RunContext, what: str) -> None:
     """Click Save exactly once (rule 4) and verify it took: Save becomes disabled again."""
-    save = ctx.snapshot().one("Button", ctx.label("toolbar.save"))
-    if not save.enabled:
+    if not save_enabled(ctx):
         raise UIError(f"Save is disabled before saving {what}: nothing was changed?")
-    ctx.targets.append(save.rect)
+    from pywinauto.controls.uiawrapper import UIAWrapper
+
+    save = ctx.results["_save_button"]
+    ctx.targets.append(Rect.from_uia(save.rectangle))
     dialogs_before = _child_windows(ctx)
-    click(save.wrapper())
+    click(UIAWrapper(save))
 
     def saved_or_error() -> str | None:
         new = _child_windows(ctx) - dialogs_before
@@ -146,10 +155,10 @@ def activate_tab(ctx: RunContext, snap: Snapshot, name: str, ready: Callable[[],
 def activate_editor(ctx: RunContext, name: str) -> Snapshot:
     """Bring an open editor tab (e.g. 'New Order', also '*New Order') to the front.
     Only the active editor's controls are exposed via UIA (probe), so wait for its pane."""
-    snap = ctx.snapshot()
-    if snap.find("Pane", name=name):
-        return ctx.editor(name, snap)          # already active: reuse this snapshot
-    activate_tab(ctx, snap, name, lambda: bool(ctx.snapshot().find("Pane", name=name)),
+    if ctx.app.find_first("Pane", name) is not None:
+        return ctx.editor(name)                 # already active: read only its pane
+    snap = ctx.snapshot()                       # full read only to switch tabs
+    activate_tab(ctx, snap, name, lambda: ctx.app.find_first("Pane", name) is not None,
                  f"editor {name!r} to become active")
     return ctx.editor(name)
 
@@ -164,14 +173,16 @@ def activate_subtab(ctx: RunContext, editor: str, tab: str, ready: Callable[[Sna
 
 def open_view(ctx: RunContext, left_panel_key: str, view_name: str) -> Snapshot:
     """Open a Data list view from the left navigation panel and return its scoped snapshot."""
-    snap = ctx.snapshot()
-    if not snap.find("Pane", name=view_name):
-        item = snap.one("Text", ctx.label(f"left_panel.{left_panel_key}"))
-        click(item.wrapper())
-        wait_until(lambda: ctx.snapshot().find("Pane", name=view_name), ctx.timeout("window"),
+    if ctx.app.find_first("Pane", view_name) is None:
+        item = ctx.app.find_first("Text", ctx.label(f"left_panel.{left_panel_key}"))
+        if item is None:
+            raise UIError(f"navigation entry for {view_name!r} not found")
+        from pywinauto.controls.uiawrapper import UIAWrapper
+
+        click(UIAWrapper(item))
+        wait_until(lambda: ctx.app.find_first("Pane", view_name) is not None, ctx.timeout("window"),
                    ctx.interval, desc=f"view {view_name!r}")
-    full = ctx.snapshot()
-    return full.within(full.one("Pane", view_name))
+    return ctx.editor(view_name)
 
 
 @contextmanager
@@ -188,13 +199,12 @@ def maximized_view(ctx: RunContext, view_name: str):  # noqa: ANN201
     maximized = False
     if buttons:
         click(buttons[0].wrapper())
-        wait_until(lambda: ctx.snapshot().one("Pane", view_name).rect.height > pane.rect.height + 50,
-                   ctx.timeout(), ctx.interval, desc=f"{view_name!r} maximized")
+        wait_until(lambda: Rect.from_uia(ctx.app.find_first("Pane", view_name).rectangle).height
+                   > pane.rect.height + 50, ctx.timeout(), ctx.interval, desc=f"{view_name!r} maximized")
         maximized = True
         park_mouse(ctx)
     try:
-        full = ctx.snapshot()
-        yield full.within(full.one("Pane", view_name))
+        yield ctx.editor(view_name)
     finally:
         if maximized:
             full = ctx.snapshot()

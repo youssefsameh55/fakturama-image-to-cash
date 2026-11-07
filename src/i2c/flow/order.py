@@ -47,20 +47,27 @@ def set_order_date(ctx: RunContext, ctrl, value) -> None:  # noqa: ANN001
 
 
 def _save_enabled(ctx: RunContext) -> bool:
-    return ctx.snapshot().one("Button", ctx.label("toolbar.save")).enabled
+    from i2c.flow.common import save_enabled
+
+    return save_enabled(ctx)
 
 
 # ------------------------------------------------------------------ steps
 
 def open_order(ctx: RunContext) -> str:
-    snap = ctx.snapshot()
-    if [n for n in snap.find("TabItem") if n.name.lstrip("*") == _pane(ctx)]:   # '*New Order' when edited
+    if [n for n in ctx.app.names("TabItem") if n.lstrip("*") == _pane(ctx)]:   # '*New Order' when edited
         raise ManualReviewRequired(
             f"an unsaved '{_pane(ctx)}' editor is already open; close it (without saving) and "
             "re-run, so this run cannot write into a stale order", ctx.current_step)
-    button = snap.one("Button", ctx.label("toolbar.new_order"))
-    ctx.targets = [button.rect]
-    click(button.wrapper())
+    from pywinauto.controls.uiawrapper import UIAWrapper
+
+    from i2c.ui.geom import Rect
+
+    button = ctx.app.find_first("Button", ctx.label("toolbar.new_order"))
+    if button is None:
+        raise UIError("toolbar 'New Order' button not found")
+    ctx.targets = [Rect.from_uia(button.rectangle)]
+    click(UIAWrapper(button))
 
     def editor_ready() -> str | None:
         ed = ctx.editor(_pane(ctx))

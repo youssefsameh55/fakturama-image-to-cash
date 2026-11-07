@@ -65,8 +65,9 @@ class Snapshot:
         property walk of Fakturama's window). Fallback: the plain recursive walk (also used
         for the fake trees in offline tests).
         """
-        from i2c.perf import timed
+        from i2c.perf import count, timed
 
+        count("snapshot_from:" + _caller())
         info = getattr(root, "element_info", root)
         element = getattr(info, "element", None)
         if element is not None and hasattr(element, "BuildUpdatedCache"):
@@ -339,6 +340,16 @@ class _SubSnapshot(Snapshot):
             out.append(self._all[p])
             p = self._all[p].parent
         return out
+
+
+def _caller() -> str:
+    """First function outside the UIA plumbing that asked for a snapshot (perf diagnostics)."""
+    import sys
+
+    f = sys._getframe(2)
+    while f is not None and f.f_code.co_filename.endswith(("find.py", "app.py", "context.py", "common.py")):
+        f = f.f_back
+    return f.f_code.co_name if f is not None else "?"
 
 
 def _nearest(label: Rect, candidates: list[Node], direction: str) -> Node | None:

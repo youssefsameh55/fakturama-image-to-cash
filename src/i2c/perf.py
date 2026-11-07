@@ -23,6 +23,10 @@ def timed(name: str) -> Iterator[None]:
         _seconds[name] += time.perf_counter() - t0
 
 
+def count(name: str) -> None:
+    _counts[name] += 1
+
+
 def report() -> dict[str, dict[str, float]]:
     return {k: {"count": _counts[k], "seconds": round(_seconds[k], 2),
                 "avg_ms": round(1000 * _seconds[k] / _counts[k], 1) if _counts[k] else 0.0}

@@ -57,27 +57,14 @@ def test_document_state_words():
     assert not state_is(c, {"State": "open"}, "paid")
 
 
-def test_documents_fallback_only_on_timeout(monkeypatch):
-    import pytest
-    from i2c.errors import UIError, UITimeout
+def test_documents_searched_by_number(monkeypatch):
     from i2c.flow import save_order as so
-    c = ctx()
-    c.results["warnings"] = []
     calls = []
 
     def fake(ctx_, query, numbers, timeout=None):
         calls.append(query)
-        if query == ORDER.external_reference:
-            raise UITimeout("not listed")
         return {n: {"Document": n} for n in numbers}
 
     monkeypatch.setattr(so, "find_documents", fake)
-    rows, by_filter = so.documents_by_cust_ref(c, ["INV1", "PO1"])
-    assert not by_filter and set(rows) == {"INV1", "PO1"} and calls[1:] == ["INV1", "PO1"]
-    assert c.results["warnings"]
-
-    def dup(*a, **k):
-        raise UIError("2 documents numbered")
-    monkeypatch.setattr(so, "find_documents", dup)
-    with pytest.raises(UIError):
-        so.documents_by_cust_ref(c, ["PO1"])
+    rows = so.documents_by_number(ctx(), ["INV000003", "PO000005"])
+    assert calls == ["INV000003", "PO000005"] and set(rows) == {"INV000003", "PO000005"}

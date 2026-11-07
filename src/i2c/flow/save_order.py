@@ -8,7 +8,7 @@ import logging
 from decimal import Decimal
 
 from i2c.calc import close, parse_decimal
-from i2c.errors import ManualReviewRequired, UIError, UITimeout
+from i2c.errors import ManualReviewRequired, UIError
 from i2c.flow.common import activate_editor, open_view, read_rect, save_once
 from i2c.flow.context import RunContext
 from i2c.flow.debtor import verify_order_addresses
@@ -76,7 +76,7 @@ def _resume_saved_order(ctx: RunContext) -> None:
 
     if ctx.results.get("order_tab"):
         return
-    names = [n.name.lstrip("*") for n in ctx.snapshot().find("TabItem")]
+    names = [n.lstrip("*") for n in ctx.app.names("TabItem")]
     if _L(ctx, "order_editor.tab") in names:
         return
     rx = re.compile(_L(ctx, "order_editor.saved_tab_regex"))
@@ -110,10 +110,11 @@ def check_order(ctx: RunContext) -> str:
 
 
 def save_order(ctx: RunContext) -> str:
-    snap = ctx.snapshot()
-    before = {n.name for n in snap.find("TabItem")}
+    before = set(ctx.app.names("TabItem"))
     activate_editor(ctx, order_tab(ctx))
-    if ctx.results.get("order_tab") and not snap.one("Button", _L(ctx, "toolbar.save")).enabled:
+    from i2c.flow.common import save_enabled
+
+    if ctx.results.get("order_tab") and not save_enabled(ctx):
         name = ctx.results["order_tab"]           # resumed: already saved, nothing to save (rule 4)
         ed = activate_editor(ctx, name)
         ref = get_value(ed.by_label(_L(ctx, "order_editor.cust_ref"), ["Edit"]).wrapper()).strip()
@@ -126,7 +127,7 @@ def save_order(ctx: RunContext) -> str:
     save_once(ctx, f"order {ctx.results.get('order_no')}")
 
     def renamed() -> str | None:
-        after = {n.name for n in ctx.snapshot().find("TabItem")}
+        after = set(ctx.app.names("TabItem"))
         new = [t for t in after - before if not t.startswith("*")]
         return new[0] if len(new) == 1 else None
 
@@ -181,23 +182,13 @@ def find_documents(ctx: RunContext, query: str, numbers: list[str], timeout: flo
         return result
 
 
-def documents_by_cust_ref(ctx: RunContext, numbers: list[str]) -> tuple[dict[str, dict], bool]:
-    """Brief 4.5 / 5.5 check Cust.Ref. in Documents. Searching the list FOR the Cust.Ref. text makes
-    Fakturama's own filter confirm it (exact, no OCR of the hyphenated code). Fallback if the
-    rows are not listed under that search: search by number; the Cust.Ref. is then covered by
-    the exact UIA re-read of the saved editor and a warning is recorded.
-    Returns (rows by number, cust_ref_confirmed_by_filter)."""
-    ref = ctx.order.external_reference or ""
-    try:
-        return find_documents(ctx, ref, numbers, timeout=5.0), True
-    except UITimeout:      # not listed under the Cust.Ref. search (other UI errors still stop the run)
-        log.warning("documents %s not listed when searching Cust.Ref. %r; searching by number", numbers, ref)
-        rows: dict[str, dict] = {}
-        for n in numbers:
-            rows.update(find_documents(ctx, n, [n]))
-        ctx.results.setdefault("warnings", []).append(
-            f"Documents search by Cust.Ref. {ref!r} did not list {numbers}; Cust.Ref. verified in the saved editors")
-        return rows, False
+def documents_by_number(ctx: RunContext, numbers: list[str]) -> dict[str, dict]:
+    """Data > Documents searched by each document NUMBER (one search per document), as the user
+    asked: the number is what identifies a document. Returns rows by number."""
+    rows: dict[str, dict] = {}
+    for n in numbers:
+        rows.update(find_documents(ctx, n, [n]))
+    return rows
 
 
 def money_matches(cell: str | None, want: Decimal) -> bool:
@@ -238,19 +229,19 @@ def check_document(row: dict, date, cust_ref: str | None, total: Decimal | None,
 
 
 def verify_order_document(ctx: RunContext) -> str:
-    """Brief 4.5: Data > Documents shows the order with Date, Cust.Ref., open state and Total."""
+    """Brief 4.5: Data > Documents (searched by the order number) shows Date, Cust.Ref., open
+    state and Total. Cust.Ref. is compared from OCR (warning on a mismatch); the exact value was
+    re-read via UIA from the saved editor in the previous step."""
     number = ctx.results.get("order_no")
-    rows, ref_by_filter = documents_by_cust_ref(ctx, [number])
-    row = rows[number]
+    row = documents_by_number(ctx, [number])[number]
     ctx.results["order_document"] = row
-    problems = check_document(row, ctx.order.order_date, None if ref_by_filter else ctx.order.external_reference,
-                              ctx.order.totals.gross, ctx.results.setdefault("warnings", []))
+    problems = check_document(row, ctx.order.order_date, ctx.order.external_reference, ctx.order.totals.gross,
+                              ctx.results.setdefault("warnings", []))
     if not state_is(ctx, row, "open"):
         problems.append(f"State {row.get('State')!r} (expected {_L(ctx, 'documents_state.open')!r})")
     if problems:
         raise UIError(f"order {number} in Documents differs: {problems} (row {row})")
-    how = "listed under its Cust.Ref. search" if ref_by_filter else "Cust.Ref. checked in the editor"
-    return f"Documents: {row.get('Document')} {row.get('Date')} {row.get('State')} {row.get('Total')} ({how})"
+    return f"Documents: {row.get('Document')} {row.get('Date')} {row.get('Cust.Ref.')} {row.get('State')} {row.get('Total')}"
 
 
 def create_invoice(ctx: RunContext) -> str:
@@ -260,12 +251,12 @@ def create_invoice(ctx: RunContext) -> str:
     if len(buttons) != 1:
         raise UIError(f"expected one follow-up 'Invoice' button in the order, found {len(buttons)}")
     btn = buttons[0]
-    wait_until(lambda: ctx.editor(order_tab(ctx)).find("Button", name=btn.name, enabled=True),
-               ctx.timeout(), ctx.interval, desc="follow-up Invoice enabled")
+    wait_until(lambda: bool(btn.info.element.CurrentIsEnabled), ctx.timeout(), ctx.interval,
+               desc="follow-up Invoice enabled")
     ctx.targets.append(btn.rect)
     click(btn.wrapper())
     editor = _L(ctx, "invoice_editor.tab")
-    wait_until(lambda: ctx.snapshot().find("Pane", name=editor), ctx.timeout("window"), ctx.interval,
+    wait_until(lambda: ctx.app.find_first("Pane", editor) is not None, ctx.timeout("window"), ctx.interval,
                desc="invoice editor")
     ed = ctx.editor(editor)
     number = get_value(ed.by_label(_L(ctx, "invoice_editor.number"), ["Edit"]).wrapper()).strip()

@@ -92,7 +92,7 @@ def ensure_payment_method(ctx: RunContext) -> str:
     # The view's toolbar (green +) is a sibling of the view pane, not inside it (probe 06a).
     click(ctx.snapshot().one("Button", _L(ctx, "views.new_payment_button")).wrapper())
     editor = _L(ctx, "payment_editor.tab")
-    wait_until(lambda: ctx.snapshot().find("Pane", name=editor), ctx.timeout("window"), ctx.interval,
+    wait_until(lambda: ctx.app.find_first("Pane", editor) is not None, ctx.timeout("window"), ctx.interval,
                desc="New Term of Payment editor")
     ed = ctx.editor(editor)
     set_text(ed.by_label(_L(ctx, "payment_editor.name"), ["Edit"]).wrapper(), method, methods=ctx.text_methods)
@@ -134,13 +134,12 @@ def create_debtor(ctx: RunContext) -> str:
         return "skipped: debtor already exists"
     d = ctx.order.debtor
     editor = _L(ctx, "debtor_editor.tab")
-    snap = ctx.snapshot()
-    if [n for n in snap.find("TabItem") if n.name.lstrip("*") == editor]:
+    if [n for n in ctx.app.names("TabItem") if n.lstrip("*") == editor]:
         raise ManualReviewRequired(
             f"an unsaved '{editor}' editor is already open; close it (without saving) and re-run",
             ctx.current_step)
-    click(snap.one("Text", _L(ctx, "left_panel.new_contact")).wrapper())
-    wait_until(lambda: ctx.snapshot().find("Pane", name=editor), ctx.timeout("window"), ctx.interval,
+    click(ctx.snapshot().one("Text", _L(ctx, "left_panel.new_contact")).wrapper())
+    wait_until(lambda: ctx.app.find_first("Pane", editor) is not None, ctx.timeout("window"), ctx.interval,
                desc="New Debtor editor")
     ed = ctx.editor(editor)
     ctx.results["customer_id"] = get_value(ed.by_label(_L(ctx, "debtor_editor.customer_id"), ["Edit"]).wrapper())
@@ -158,7 +157,7 @@ def create_debtor(ctx: RunContext) -> str:
         ed = ctx.editor(editor)
         click(ed.one("Button", _L(ctx, "debtor_editor.add_address")).wrapper())
         extra = _L(ctx, "debtor_editor.additional_tab")
-        wait_until(lambda: ctx.editor(editor).find("TabItem", name=extra), ctx.timeout(), ctx.interval,
+        wait_until(lambda: ctx.app.find_first("TabItem", extra) is not None, ctx.timeout(), ctx.interval,
                    desc=f"tab {extra!r}")
         prefixes = tuple(ctx.label("debtor_editor.address_tab_prefixes"))
         activate_subtab(ctx, editor, extra, lambda s: _active_address_tab(s, prefixes) == extra)
@@ -237,12 +236,16 @@ def _set_roles(ctx: RunContext, editor: str, roles: dict[str, bool]) -> None:
     button = ed.inputs_after_label(label, ("Button",))[0]
     first_role = next(iter(roles))
     click(button.wrapper())
-    wait_until(lambda: ctx.snapshot().find("CheckBox", name=first_role), ctx.timeout(), ctx.interval,
+    wait_until(lambda: ctx.app.find_first("CheckBox", first_role) is not None, ctx.timeout(), ctx.interval,
                desc="address type popup")
-    snap = ctx.snapshot()
+    from pywinauto.controls.uiawrapper import UIAWrapper
+
+    boxes = {role: ctx.app.find_first("CheckBox", role) for role in roles}
+    if any(b is None for b in boxes.values()):
+        raise UIError(f"address type popup lacks role checkboxes: {[r for r, b in boxes.items() if b is None]}")
     for role, on in roles.items():
-        set_checkbox(snap.one("CheckBox", role).wrapper(), on)
-    states = {role: get_checked(snap.one("CheckBox", role).wrapper()) for role in roles}
+        set_checkbox(UIAWrapper(boxes[role]), on)
+    states = {role: get_checked(UIAWrapper(boxes[role])) for role in roles}
     _close_popup(ctx, first_role, field)
     shown = norm(get_value(field.wrapper()))
     wrong = [r for r, on in roles.items() if on != (norm(r) in shown) or states[r] != on]
@@ -258,7 +261,7 @@ def _close_popup(ctx: RunContext, marker: str, field) -> None:  # noqa: ANN001
     from pywinauto import keyboard
 
     def closed() -> bool:
-        return not ctx.snapshot().find("CheckBox", name=marker)
+        return ctx.app.find_first("CheckBox", marker) is None
 
     keyboard.send_keys("{ESC}")
     try:
