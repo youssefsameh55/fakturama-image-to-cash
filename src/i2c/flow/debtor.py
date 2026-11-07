@@ -135,6 +135,10 @@ def create_debtor(ctx: RunContext) -> str:
     d = ctx.order.debtor
     editor = _L(ctx, "debtor_editor.tab")
     snap = ctx.snapshot()
+    if snap.find("TabItem", name=editor) or snap.find("TabItem", name="*" + editor):
+        raise ManualReviewRequired(
+            f"an unsaved '{editor}' editor is already open; close it (without saving) and re-run",
+            ctx.current_step)
     click(snap.one("Text", _L(ctx, "left_panel.new_contact")).wrapper())
     wait_until(lambda: ctx.snapshot().find("Pane", name=editor), ctx.timeout("window"), ctx.interval,
                desc="New Debtor editor")
@@ -221,14 +225,31 @@ def _set_roles(ctx: RunContext, editor: str, roles: dict[str, bool]) -> None:
     for role, on in roles.items():
         set_checkbox(snap.one("CheckBox", role).wrapper(), on)
     states = {role: get_checked(snap.one("CheckBox", role).wrapper()) for role in roles}
-    click(button.wrapper())   # same button closes the popup
-    wait_until(lambda: not ctx.snapshot().find("CheckBox", name=first_role), ctx.timeout(), ctx.interval,
-               desc="address type popup to close")
+    _close_popup(ctx, first_role, field)
     shown = norm(get_value(field.wrapper()))
     wrong = [r for r, on in roles.items() if on != (norm(r) in shown) or states[r] != on]
     if wrong:
         raise UIError(f"address type shows {get_value(field.wrapper())!r}, roles wanted {roles}")
     ctx.targets.append(field.rect)
+
+
+def _close_popup(ctx: RunContext, marker: str, field) -> None:  # noqa: ANN001
+    """Live finding: clicking ▸ again does not close the role popup. Esc first; if it is still
+    open, click into the address-type field (focus leaves the popup). The field already shows
+    the roles at this point, so neither loses the selection - which is verified afterwards."""
+    from pywinauto import keyboard
+
+    def closed() -> bool:
+        return not ctx.snapshot().find("CheckBox", name=marker)
+
+    keyboard.send_keys("{ESC}")
+    try:
+        wait_until(closed, 2.0, ctx.interval, desc="role popup to close after Esc")
+        return
+    except Exception:  # noqa: BLE001
+        log.info("role popup still open after Esc; clicking the address type field")
+    click(field.wrapper())
+    wait_until(closed, ctx.timeout(), ctx.interval, desc="role popup to close")
 
 
 # ------------------------------------------------------------------ step 4: select in order
