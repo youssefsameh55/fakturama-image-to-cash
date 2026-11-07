@@ -16,7 +16,7 @@ See `PLAN.md` for the full design. `DESIGN.md` (Part 1) will be written after th
 | UIA probe of 10 screens | done (`artifacts/probe/`, findings below) |
 | M3 UI toolkit (find/wait/input/ocr/table/evidence) | done; checked live on VATs, terms of payment and Select the address |
 | M4 Run framework + stage `order` | done; live run verified (PO000001, Jul 14 2026, Cust.Ref., Net, With VAT) |
-| M5 Stage `debtor` (match / payment method / create / select) | code done, offline-tested; live run pending |
+| M5 Stage `debtor` (match / payment method / create / select) | done; verified live (create path and select-existing path) |
 | M6–M7 Flow stages | not started |
 | M8 Deliverables | not started |
 
