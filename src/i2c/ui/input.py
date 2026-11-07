@@ -174,7 +174,7 @@ def parse_display_date(text: str) -> date | None:
 
 def set_date(ctrl: object, d: date, *, pattern: str = "{mon} {day}, {year}",
              methods: tuple[str, ...] = ("value", "keys"), timeout: float = 3.0) -> date:
-    """Set a date field and verify the read-back parses to the same date."""
+    """Set a plain-text date field and verify the read-back parses to the same date."""
     text = format_display_date(d, pattern)
     set_text(ctrl, text, methods=methods, timeout=timeout,
              normalize=lambda s: parse_display_date(s) or s)
@@ -182,3 +182,98 @@ def set_date(ctrl: object, d: date, *, pattern: str = "{mon} {day}, {year}",
     if got != d:
         raise UIError(f"date field shows {get_value(ctrl)!r}, expected {d.isoformat()}")
     return got
+
+
+# A spinner-style date widget (Fakturama's Date fields): the text can be replaced through UIA
+# but the widget redraws from its own model a moment later (seen live: 'Jul 14, 2026' set,
+# 'Nov 7, 2026' back). It is driven like a user would: arrow keys per date field.
+
+_PARTS = ("year", "month", "day")
+
+
+def _date_or_fail(ctrl: object) -> date:
+    got = parse_display_date(get_value(ctrl))
+    if got is None:
+        raise UIError(f"date field shows unparseable {get_value(ctrl)!r}")
+    return got
+
+
+def _press_and_read(ctrl: object, keys: str, before: date, step_timeout: float) -> date:
+    ctrl.type_keys(keys, set_foreground=False)  # type: ignore[attr-defined]
+    try:
+        return wait_until(lambda: (v := _date_or_fail(ctrl)) != before and v, step_timeout,
+                          interval=0.05, desc=f"date to change after {keys}")
+    except UITimeout:
+        return _date_or_fail(ctrl)
+
+
+def _changed_part(a: date, b: date) -> str | None:
+    """Which field was spun. A month step can clamp the day (Mar 31 -> Apr 30) or roll the
+    year (Dec -> Jan), so 'month changed' wins; otherwise exactly one part must differ."""
+    if a.month != b.month:
+        return "month"
+    diff = [p for p in _PARTS if getattr(a, p) != getattr(b, p)]
+    return diff[0] if len(diff) == 1 else None
+
+
+def set_date_by_arrows(ctrl: object, target: date, *, max_fields: int = 4,
+                       step_timeout: float = 1.0, max_rounds: int = 3, max_steps: int = 400) -> date:
+    """Set a field-based date widget with the keyboard and verify after every step.
+
+    1. Click into the leftmost field (left edge of the control's UIA rect, not a fixed position).
+    2. Calibrate: for each field, UP -> see which part (year/month/day) changed -> DOWN to
+       undo -> RIGHT. This learns the field order instead of assuming a locale format.
+    3. Year, then month, then day (so day clamping can't bite): one UP/DOWN at a time, each
+       verified, until the part matches. Repeated rounds absorb roll-overs (e.g. month wrap).
+    """
+    def to_field(index: int) -> None:
+        r = ctrl.rectangle()  # type: ignore[attr-defined]
+        ctrl.click_input(coords=(6, (r.bottom - r.top) // 2))  # type: ignore[attr-defined]
+        if index:
+            ctrl.type_keys("{RIGHT %d}" % index, set_foreground=False)  # type: ignore[attr-defined]
+
+    to_field(0)
+    current = _date_or_fail(ctrl)
+    if current == target:
+        return current
+
+    order: list[str] = []
+    for _ in range(max_fields):
+        up = _press_and_read(ctrl, "{UP}", current, step_timeout)
+        part = _changed_part(current, up)
+        if part is None:
+            break
+        back = _press_and_read(ctrl, "{DOWN}", up, step_timeout)
+        if getattr(back, part) != getattr(current, part):
+            raise UIError(f"date widget did not undo UP on {part} ({current} -> {up} -> {back})")
+        current = back  # may differ in a clamped day; the adjust phase fixes every part anyway
+        if part in order:
+            break  # RIGHT did not move any further: last field reached
+        order.append(part)
+        ctrl.type_keys("{RIGHT}", set_foreground=False)  # type: ignore[attr-defined]
+    if not order:
+        raise UIError("date widget did not react to arrow keys")
+    log.debug("date widget field order: %s", order)
+
+    for _ in range(max_rounds):
+        for part in [p for p in _PARTS if p in order]:
+            to_field(order.index(part))
+            for _ in range(max_steps):
+                current = _date_or_fail(ctrl)
+                delta = _part_delta(current, target, part)
+                if delta == 0:
+                    break
+                after = _press_and_read(ctrl, "{UP}" if delta > 0 else "{DOWN}", current, step_timeout)
+                if after == current:
+                    raise UIError(f"date widget stopped reacting while setting {part}")
+        if _date_or_fail(ctrl) == target:
+            break
+    got = _date_or_fail(ctrl)
+    if got != target:
+        raise UIError(f"date widget shows {got.isoformat()}, expected {target.isoformat()} "
+                      f"(field order {order})")
+    return got
+
+
+def _part_delta(current: date, target: date, part: str) -> int:
+    return getattr(target, part) - getattr(current, part)

@@ -20,6 +20,7 @@ ocr:
 input:
   text_methods: [value, keys]    # order of attempts for text fields; each is verified by read-back
   date_pattern: "{mon} {day}, {year}"   # probe: Fakturama shows 'Nov 7, 2026'
+  date_method: arrows            # arrows | text. Live: text set via UIA reverted to today -> arrow keys per field
 
 tables:                          # canonical column headers (OCR text is fuzzy-matched to these)
   select_address: ["No.", "First Name", "Name", "Company", "ZIP", "City", "address type"]

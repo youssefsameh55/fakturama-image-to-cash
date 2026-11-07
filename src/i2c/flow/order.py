@@ -14,7 +14,8 @@ from i2c.errors import ManualReviewRequired, UIError
 from i2c.flow.context import RunContext
 from i2c.flow.runner import Step
 from i2c.ui.find import Snapshot
-from i2c.ui.input import click, get_value, parse_display_date, select_combo, set_date, set_text
+from i2c.ui.input import (click, get_value, parse_display_date, select_combo, set_date,
+                          set_date_by_arrows, set_text)
 from i2c.ui.wait import wait_until
 
 log = logging.getLogger(__name__)
@@ -34,6 +35,15 @@ def _price_mode_combo(ed: Snapshot, ctx: RunContext):  # noqa: ANN202
     if len(combos) != 1:
         raise UIError(f"expected one Net/Gross combo in the order editor, found {len(combos)}")
     return combos[0]
+
+
+def set_order_date(ctx: RunContext, ctrl, value) -> None:  # noqa: ANN001
+    """Date fields are spinner widgets: text set via UIA reverts (seen live), so the default
+    is arrow-key editing; `input.date_method: text` switches back to typed text."""
+    if ctx.settings.get("input.date_method", "arrows") == "arrows":
+        set_date_by_arrows(ctrl, value)
+    else:
+        set_date(ctrl, value, pattern=ctx.date_pattern, methods=ctx.text_methods)
 
 
 def _save_enabled(ctx: RunContext) -> bool:
@@ -71,10 +81,15 @@ def order_header(ctx: RunContext) -> str:
 
     ed = ctx.editor(_pane(ctx))
     date_node = ed.by_label(ctx.label("order_editor.date"), control_types=["Edit"])
-    set_date(date_node.wrapper(), order.order_date, pattern=ctx.date_pattern, methods=ctx.text_methods)
+    set_order_date(ctx, date_node.wrapper(), order.order_date)
 
     ref_node = ed.by_label(ctx.label("order_editor.cust_ref"), control_types=["Edit"])
     set_text(ref_node.wrapper(), order.external_reference, methods=ctx.text_methods)
+
+    # Focus has left the date field now; a value the widget did not commit would have reverted.
+    shown = parse_display_date(get_value(date_node.wrapper()))
+    if shown != order.order_date:
+        raise UIError(f"Date reverted to {shown} after leaving the field (wanted {order.order_date})")
 
     # A value that only changed the widget text (not Fakturama's model) leaves Save disabled.
     # In that case type it for real once more; if Save is still disabled, stop.

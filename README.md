@@ -86,6 +86,12 @@ See `PLAN.md` §9 (G1–G6). Additional implementation decisions:
   right of the `Text` label. Labels that occur twice ("VAT") are told apart by control type. Forms
   with two columns and one label for two fields ("ZIP - City") take only the inputs before the
   next label.
+- **Date fields are set with the arrow keys, not typed text.** The first live run showed that text
+  set through UIA ("Jul 14, 2026") read back correctly at first, then the widget redrew from its
+  own value ("Nov 7, 2026"). The final independent re-read caught this. Dates are now set like a
+  user would: click the field's left edge, find the field order by pressing Up on each field and
+  seeing which part changed, then step year, month and day to the target. Every keypress is read
+  back. The date is checked again after focus leaves the field.
 - **Clicks use the real mouse at the centre of the control's UIA rectangle.** UIA `Invoke` on an
   SWT button that opens a modal dialog can block until the dialog closes.
 - **Text input tries UIA ValuePattern first, then the keyboard, and every value is read back.**

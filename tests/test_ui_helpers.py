@@ -7,7 +7,8 @@ from PIL import Image
 from i2c.errors import UIError, UITimeout
 from i2c.ui.evidence import Evidence, annotate, slug
 from i2c.ui.geom import Rect
-from i2c.ui.input import (escape_keys, format_display_date, parse_display_date, set_date, set_text)
+from i2c.ui.input import (escape_keys, format_display_date, parse_display_date, set_date,
+                          set_date_by_arrows, set_text)
 from i2c.ui.wait import wait_stable, wait_until
 
 
@@ -105,6 +106,72 @@ def test_dates_round_trip():
     assert parse_display_date("garbage") is None
     e = FakeEdit()
     assert set_date(e, d, timeout=0.1) == d
+
+
+class FakeDateWidget:
+    """Spinner date like Fakturama's: fields [month, day, year], shown as 'Nov 7, 2026'.
+    UP/DOWN change the focused field (month wraps without touching the year; day clamps)."""
+
+    import calendar as _cal
+
+    def __init__(self, d, fields=("month", "day", "year")):
+        self.d, self.fields, self.caret, self.keys = d, fields, 0, []
+        self.iface_value = self
+
+    @property
+    def CurrentValue(self):  # noqa: N802
+        return format_display_date(self.d)
+
+    def rectangle(self):
+        return Rect(100, 100, 300, 130)
+
+    def click_input(self, coords=None):
+        self.caret = 0
+
+    def type_keys(self, keys, **_):
+        import re
+        self.keys.append(keys)
+        for name, n in re.findall(r"\{(\w+)(?: (\d+))?\}", keys):
+            for _ in range(int(n or 1)):
+                if name == "RIGHT":
+                    self.caret = min(self.caret + 1, len(self.fields) - 1)
+                elif name == "LEFT":
+                    self.caret = max(self.caret - 1, 0)
+                elif name in ("UP", "DOWN"):
+                    self._spin(1 if name == "UP" else -1)
+
+    def _spin(self, step):
+        f, d = self.fields[self.caret], self.d
+        y, m, day = d.year, d.month, d.day
+        if f == "year":
+            y += step
+        elif f == "month":
+            m = (m - 1 + step) % 12 + 1
+        else:
+            day = (day - 1 + step) % self._cal.monthrange(y, m)[1] + 1
+        day = min(day, self._cal.monthrange(y, m)[1])
+        self.d = date(y, m, day)
+
+
+@pytest.mark.parametrize("fields", [("month", "day", "year"), ("day", "month", "year"), ("year", "month", "day")])
+def test_set_date_by_arrows_learns_field_order(fields):
+    w = FakeDateWidget(date(2026, 11, 7), fields)
+    assert set_date_by_arrows(w, date(2026, 7, 14), step_timeout=0.05) == date(2026, 7, 14)
+
+
+def test_set_date_by_arrows_handles_year_change_and_day_clamp():
+    w = FakeDateWidget(date(2026, 3, 31))
+    assert set_date_by_arrows(w, date(2025, 2, 28), step_timeout=0.05) == date(2025, 2, 28)
+
+
+class DeadWidget(FakeDateWidget):
+    def _spin(self, step):
+        pass
+
+
+def test_set_date_by_arrows_fails_loudly_when_widget_ignores_keys():
+    with pytest.raises(UIError):
+        set_date_by_arrows(DeadWidget(date(2026, 11, 7)), date(2026, 7, 14), step_timeout=0.02)
 
 
 # ------------------------------------------------------------------ evidence
