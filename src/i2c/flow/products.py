@@ -144,8 +144,12 @@ def _add_line(ctx: RunContext, item: Item) -> str:
     activate_editor(ctx, order_tab)
     items, _ = read_items(ctx)
     if _line_for(items, item.sku) is not None:
-        raise ManualReviewRequired(f"the order already has a line for {item.sku!r}; refusing to add it twice",
-                                   ctx.current_step, details=items.as_dicts())
+        # A new order has no lines, so this only happens when a stage is resumed (--start-at):
+        # reuse the line instead of adding a duplicate; its values are set/verified next.
+        msg = f"line for {item.sku} already in the order (resumed run) - not added again"
+        log.warning(msg)
+        ctx.results.setdefault("warnings", []).append(msg)
+        return msg
 
     title = _L(ctx, DIALOG)
     entities = ctx.results["entities"].setdefault("product", {})
