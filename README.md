@@ -18,7 +18,7 @@ See `PLAN.md` for the full design. `DESIGN.md` (Part 1) will be written after th
 | M4 Run framework + stage `order` | done; live run verified (PO000001, Jul 14 2026, Cust.Ref., Net, With VAT) |
 | M5 Stage `debtor` (match / payment method / create / select) | done; verified live (create path and select-existing path) |
 | M6 Stage `products` (VAT, products, lines) | done; verified live (VAT + products created, lines set and read back, 27.7 s) |
-| M7 Stages `save_order` + `invoice` | not started |
+| M7 Stages `save_order` + `invoice` | code done, offline-tested; live run pending |
 | M8 Deliverables | not started |
 
 ## Setup

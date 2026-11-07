@@ -83,6 +83,9 @@ labels:                                # confirmed against UIA probe dumps (arti
     delivery_address_tab: "Delivery address"
     items: "Items"                         # upper Image below it = select existing product
     total_gross: "Total Gross"
+    total_net: "Total Net"                 # first totals Edit in Net mode (Total Gross in Gross mode)
+    discount: "Discount"
+    number_label: "No."
     vat_total: "VAT"                       # Edit "VAT" (totals block)
     total: "Total"
     shipping: "Shipping"
@@ -152,7 +155,11 @@ labels:                                # confirmed against UIA probe dumps (arti
     stock: "Stock"
   invoice_editor:
     tab: "New Invoice"
-    paid: "paid"                           # CheckBox
+    number: "No."
+    order_date: "Order Date"
+    paid: "paid"                           # CheckBox; payment method = unnamed ComboBox right of it
+    paid_at: "at"                          # appears when paid is ticked (probe 13): date Edit right of it
+    value: "Value"                         # Edit "Value" (paid amount)
     due_days: "Due Days"
     pay_until: "Pay Until"
   common:
