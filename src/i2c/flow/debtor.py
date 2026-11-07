@@ -89,7 +89,8 @@ def ensure_payment_method(ctx: RunContext) -> str:
     code = (ctx.settings.get("payment_method_codes") or {}).get(method)
     if not code:
         raise ManualReviewRequired(f"no payment code mapping for {method!r} in settings.yaml", ctx.current_step)
-    click(view.one("Button", _L(ctx, "views.new_payment_button")).wrapper())
+    # The view's toolbar (green +) is a sibling of the view pane, not inside it (probe 06a).
+    click(ctx.snapshot().one("Button", _L(ctx, "views.new_payment_button")).wrapper())
     editor = _L(ctx, "payment_editor.tab")
     wait_until(lambda: ctx.snapshot().find("Pane", name=editor), ctx.timeout("window"), ctx.interval,
                desc="New Term of Payment editor")
