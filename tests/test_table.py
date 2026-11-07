@@ -135,3 +135,14 @@ def test_looks_selected_and_cell_point():
     t = build_table(words, TABLE, lines=[1020, 1200])
     assert t.cell_point(t.rows[0], "No.") == w("CUST000005", 1030, 550, 100).rect.center
     assert t.cell_point(t.rows[0], "Missing") is None
+
+
+def test_find_phrase_ignores_icon_words_live_bug():
+    from i2c.ui.table import find_phrase
+    # OCR of the real editor tab bar: '*New Order' followed by the VAT tab's '%' icon
+    words = [w("Can't", 655, 231, 54), w("reach", 718, 230, 55), w("this", 781, 230, 37),
+             w("Le", 858, 224, 32), w("*New", 899, 231, 57), w("Order", 964, 230, 60),
+             w("%", 1040, 222, 32), w("VAT", 1080, 231, 39), w("x", 1192, 230, 17)]
+    assert find_phrase(words, "New Order") == Rect(899, 230, 1024, 251)
+    two = words + [w("New", 1300, 231, 40), w("Order", 1350, 231, 60)]
+    assert find_phrase(two, "New Order") is None          # two separate tabs -> ambiguous

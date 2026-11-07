@@ -246,15 +246,20 @@ def find_phrase(words: list[Word], phrase: str, min_ratio: float = 0.85) -> Rect
     for line in group_rows([w for w in words if w.text.strip()], tolerance=8):
         for i in range(len(line)):
             text = ""
+            if not _norm(line[i].text):
+                continue                        # runs never start on an icon/punctuation 'word'
             for j in range(i, min(i + 6, len(line))):
-                text += _norm(line[j].text)
+                piece = _norm(line[j].text)
+                if not piece:
+                    continue                    # '%' icon etc. adds nothing: don't re-score (live bug)
+                text += piece
                 ratio = 1.0 if text == target else difflib.SequenceMatcher(None, text, target).ratio()
                 if ratio >= min_ratio:
                     box = _bounding(line[i:j + 1])
                     if best is None or ratio > best[0]:
                         best, tie = (ratio, box), False
-                    elif ratio == best[0] and box != best[1]:
-                        tie = True
+                    elif ratio == best[0] and box.h_overlap(best[1]) <= 0:
+                        tie = True              # an equally good, separate occurrence
                 if len(text) > len(target) + 3:
                     break
     if best is None or tie:
