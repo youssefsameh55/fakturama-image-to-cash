@@ -27,38 +27,52 @@ class FakeElement:
 class FakeAnchor:
     """An Edit inside the editor; `closes_on` = the key that closes the editor, `dialog_on` opens one."""
 
-    def __init__(self, app, closes_on="^w", dialog_on=None):
+    def __init__(self, app, closes_on="^{F4}", dialog_on=None, dirties_on=None, save=None):
         self.element_info = SimpleNamespace(element=FakeElement())
         self.app, self.closes_on, self.dialog_on, self.sent = app, closes_on, dialog_on, []
+        self.dirties_on, self.save = dirties_on, save
 
     def type_keys(self, keys, **_):
         self.sent.append(keys)
-        if keys == self.dialog_on:
+        if keys == self.dirties_on:          # live: Ctrl+W typed a 'w' into the Name box
+            self.save.element.CurrentIsEnabled = True
+        elif keys == self.dialog_on:
             self.app.windows.append(SimpleNamespace(control_type="Window", name="Save Resource"))
         elif keys == self.closes_on:
             self.element_info.element.closed = True
 
 
-def make_ctx(save_enabled=False):
+def make_ctx(save_enabled=False, keys=None):
     app = SimpleNamespace(windows=[])
     app.main = SimpleNamespace(element_info=SimpleNamespace(children=lambda: list(app.windows)))
-    settings = SimpleNamespace(get=lambda key, default=None: default)
+    settings = SimpleNamespace(get=lambda key, default=None: keys if keys and key == "input.close_editor_keys"
+                               else default)
     save = SimpleNamespace(element=SimpleNamespace(CurrentIsEnabled=save_enabled))
     return SimpleNamespace(app=app, settings=settings, results={"_save_button": save})
 
 
-def test_closes_with_first_key():
+def test_closes_with_ctrl_f4_by_default():
     ctx = make_ctx()
     anchor = FakeAnchor(ctx.app)
     assert close_saved_editor(ctx, anchor, "VAT") is True
-    assert anchor.sent == ["^w"]
+    assert anchor.sent == ["^{F4}"]
 
 
-def test_falls_back_to_second_key():
-    ctx = make_ctx()
-    anchor = FakeAnchor(ctx.app, closes_on="^{F4}")
+def test_falls_back_to_next_configured_key():
+    ctx = make_ctx(keys=["^{F4}", "%{F4}x"])
+    anchor = FakeAnchor(ctx.app, closes_on="%{F4}x")
     assert close_saved_editor(ctx, anchor, "VAT") is True
-    assert anchor.sent == ["^w", "^{F4}"]
+    assert anchor.sent == ["^{F4}", "%{F4}x"]
+
+
+def test_key_that_changes_the_editor_stops_before_any_other_key():
+    """The live failure: a close key typed a character -> editor dirty. Stop; never try Ctrl+F4 next
+    (that would ask 'Save Parts')."""
+    ctx = make_ctx(keys=["^w", "^{F4}"])
+    anchor = FakeAnchor(ctx.app, closes_on="^{F4}", dirties_on="^w", save=ctx.results["_save_button"])
+    with pytest.raises(UIError, match="changed the saved"):
+        close_saved_editor(ctx, anchor, "payment method")
+    assert anchor.sent == ["^w"]
 
 
 def test_unsaved_editor_is_never_closed():
@@ -70,7 +84,7 @@ def test_unsaved_editor_is_never_closed():
 
 def test_dialog_on_close_stops_the_run():
     ctx = make_ctx()
-    anchor = FakeAnchor(ctx.app, closes_on=None, dialog_on="^w")
+    anchor = FakeAnchor(ctx.app, closes_on=None, dialog_on="^{F4}")
     with pytest.raises(UIError, match="dialog"):
         close_saved_editor(ctx, anchor, "debtor")
 

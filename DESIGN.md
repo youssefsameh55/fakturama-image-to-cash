@@ -24,7 +24,7 @@ order image ─► LLM extraction (1 call, cached) ─► validation ─► (1 r
 ```
 
 **Result.** End to end `status: ok` in 63.5 s with all master data selected; the create paths
-(Debtor with two addresses, payment method, VAT, products) were verified live as well. 135 offline
+(Debtor with two addresses, payment method, VAT, products) were verified live as well. 136 offline
 tests.
 
 ## 2. Extraction (image → data)
@@ -138,7 +138,7 @@ stopping step, the entities selected or created, every step's verification, warn
 
 ## 6. Testing
 
-**Offline: 135 automated tests** (`pytest`, no Fakturama needed, run after every change):
+**Offline: 136 automated tests** (`pytest`, no Fakturama needed, run after every change):
 - **Unit tests:** money math (half-up rounding, gross price, mixed VAT rates), parsing into the data
   model, every validation rule (the sample's correct data plus one deliberate error per test), and
   matching (all four outcomes per entity, truncated cells, OCR look-alikes).

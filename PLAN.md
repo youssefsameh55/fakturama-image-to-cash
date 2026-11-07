@@ -371,7 +371,7 @@ shared helpers (tabs, open/maximize a view, read a table, selectors, save once) 
 
 ## 11. Testing strategy
 
-- **Offline unit (135 tests):** calc; validate (golden fixture + mutated variants); match
+- **Offline unit (136 tests):** calc; validate (golden fixture + mutated variants); match
   (none/exact/ambiguous/conflict); table grouping (synthetic OCR words); extraction service retry +
   cache with a fake provider; plus replays of real UIA dumps (`fixtures/uia/`) and live OCR
   captures (`fixtures/ocr/`) for control finding, tables, products and invoice checks.
@@ -438,5 +438,5 @@ photographed/skewed images; CI for offline tests.
 | Invoice Items | Items pane rect | rect cut at the "Remarks" label | the invoice is a scrolled form; Items runs under the totals panel |
 | Launching Fakturama | attach or launch | attach only | out of scope; must be running, maximized |
 | CLI | `--stop-after` | also `--start-at` (continue in open editors) and `gui` (launcher window) | stage-by-stage development; one-click runs |
-| Saved editors | left open | master-data editors closed after their save is verified (Ctrl+W, verified; never unsaved) | 5 open editors made each UIA read ~2.5× slower (188 s create-everything run) |
+| Saved editors | left open | master-data editors closed after their save is verified (Ctrl+F4, verified; never unsaved) | 5 open editors made each UIA read ~2.5× slower (188 s create-everything run). Ctrl+W is unbound in Fakturama and typed a "w" into the field (seen live) |
 | Performance | not planned | `perf.py` counters; pane-scoped UIA reads, cached snapshots, `FindFirst` | ~75 % of a run was UI-tree reads; 156 s → 63.5 s with every check kept |

@@ -21,7 +21,8 @@ input:
                                  # Fakturama's data (saved empty) -> real keystrokes first; all read back
   date_pattern: "{mon} {day}, {year}"   # probe: Fakturama shows 'Nov 7, 2026'
   key_pause: 0.01                # s between keystrokes (pywinauto default 0.05)
-  close_editor_keys: ["^w", "^{F4}"]   # close a SAVED master-data editor (fewer open editors = faster UIA reads)
+  close_editor_keys: ["^{F4}"]   # close a SAVED master-data editor (fewer open editors = faster UIA reads).
+                                 # Live: Ctrl+W is unbound and typed 'w' into the field; Ctrl+F4 closes
   date_method: arrows            # arrows | text. Live: text set via UIA reverted to today -> arrow keys per field
 
 tables:                          # canonical column headers (OCR text is fuzzy-matched to these)

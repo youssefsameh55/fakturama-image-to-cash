@@ -87,14 +87,19 @@ def close_saved_editor(ctx: RunContext, anchor, what: str) -> bool:  # noqa: ANN
     nothing created, ~260 ms after 5 editors were left open; a create-everything run took 188 s).
     Safe by construction: only when Save is disabled (nothing unsaved), keys only with proven focus
     on a control inside that editor (`anchor`), closed = that control is gone. A dialog after the
-    key (e.g. 'Save changes?') is never answered: the run stops with its text. If no close key
-    works, the editor just stays open (a warning) - closing is cleanup, not a brief requirement."""
+    key (e.g. 'Save Parts') is never answered: the run stops with its text. If no close key
+    works, the editor just stays open (a warning) - closing is cleanup, not a brief requirement.
+
+    Only non-character keys: live, Ctrl+W is not bound in Fakturama and typed a 'w' into the
+    focused Name box (editor dirty again -> Ctrl+F4 then asked 'Save Parts'). Ctrl+F4 closes the
+    editor and types nothing. Should a key ever change the editor anyway (Save enabled again),
+    the run stops at once instead of trying another key."""
     if save_enabled(ctx):
         log.warning("not closing the %s editor: it has unsaved changes", what)
         return False
     element = anchor.element_info.element
     dialogs_before = _child_windows(ctx)
-    for keys in ctx.settings.get("input.close_editor_keys", ["^w", "^{F4}"]):
+    for keys in ctx.settings.get("input.close_editor_keys", ["^{F4}"]):
         if _gone(element):
             break
         ensure_focus(anchor)
@@ -108,6 +113,9 @@ def close_saved_editor(ctx: RunContext, anchor, what: str) -> bool:  # noqa: ANN
         if new:
             raise UIError(f"Fakturama showed a dialog when closing the saved {what} editor: "
                           f"{sorted(new)} {_dialog_texts(ctx, dialogs_before)}")
+        if not _gone(element) and save_enabled(ctx):
+            raise UIError(f"close key {keys!r} changed the saved {what} editor (Save enabled again); "
+                          f"not saved, left open for review")
     if _gone(element):
         log.info("closed the saved %s editor", what)
         return True
