@@ -17,8 +17,8 @@ import logging
 from decimal import Decimal
 
 from i2c.calc import line_net, parse_decimal, product_gross_price
-from i2c.errors import ManualReviewRequired, UIError
-from i2c.flow.common import (activate_editor, cancel_dialog, open_selector, open_view,
+from i2c.errors import ManualReviewRequired, SelectorClosed, UIError
+from i2c.flow.common import (activate_editor, cancel_dialog, open_selector, open_view, park_mouse,
                              pick_row_and_ok, read_rect, read_view_table, save_once, search_selector)
 from i2c.flow.context import RunContext
 from i2c.flow.runner import Step
@@ -170,7 +170,10 @@ def _add_line(ctx: RunContext, item: Item) -> str:
     title = _L(ctx, DIALOG)
     entities = ctx.results["entities"].setdefault("product", {})
     open_selector(ctx, order_tab, "order_editor.items", title)
-    table, _ = search_selector(ctx, title, item.sku, "select_product")
+    try:
+        table, _ = search_selector(ctx, title, item.sku, "select_product")
+    except SelectorClosed:
+        return _accept_auto_pick(ctx, item, entities, created=False)
     rows = table.as_dicts()
     result = match_product(rows, item.sku, item.description)
     if result.outcome is Outcome.EXACT:
@@ -183,7 +186,10 @@ def _add_line(ctx: RunContext, item: Item) -> str:
         entities[item.sku] = "created"
         activate_editor(ctx, order_tab)
         open_selector(ctx, order_tab, "order_editor.items", title)
-        table, _ = search_selector(ctx, title, item.sku, "select_product")
+        try:
+            table, _ = search_selector(ctx, title, item.sku, "select_product")
+        except SelectorClosed:
+            return _accept_auto_pick(ctx, item, entities, created=True)
         rows = table.as_dicts()
         again = match_product(rows, item.sku, item.description)
         if again.outcome is not Outcome.EXACT:
@@ -199,6 +205,19 @@ def _add_line(ctx: RunContext, item: Item) -> str:
 
     wait_until(line_present, ctx.timeout(), ctx.interval, desc=f"item line {item.sku!r}")
     return f"line for {item.sku} added ({entities[item.sku]} product)"
+
+
+def _accept_auto_pick(ctx: RunContext, item: Item, entities: dict, created: bool) -> str:
+    """The selector picked the typed item number itself and closed (seen live). Accept it only
+    if the Items table now holds exactly one line for this SKU; anything else stops the run."""
+    if not created:
+        entities[item.sku] = "selected"
+    else:
+        entities[item.sku] = "created"
+    table, _ = read_items(ctx)
+    if _line_for(table, item.sku) is None:
+        raise UIError(f"'Select a product' closed while searching {item.sku!r} but no line was added")
+    return f"line for {item.sku} added (selector picked the item number itself; {entities[item.sku]} product)"
 
 
 def _description_policy(ctx: RunContext, reason: str, row: dict) -> None:
@@ -329,6 +348,7 @@ def _edit_cell(ctx: RunContext, table: Table, table_node, idx: int, column: str,
         log.info("no inline Edit for %s in UIA; typing into the focused cell", column)
         keyboard.send_keys("^a" + value)
     keyboard.send_keys("{ENTER}")
+    park_mouse(ctx)
     # Live: after Enter the value was committed (line price updated) but the editor stayed open.
     try:
         wait_until(lambda: inline_editor() is None, 1.0, 0.1, desc="cell editor to close")

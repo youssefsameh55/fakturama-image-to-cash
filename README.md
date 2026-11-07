@@ -138,6 +138,15 @@ See `PLAN.md` §9 (G1–G6). Additional implementation decisions:
   focus through UIA (set by UIA focus, else by clicking into it); otherwise the step stops. Keys
   are sent without forcing the main window to the foreground. Selector dialogs count as open only
   once their search box exists.
+- **The UI tree is read with one UIA cache request.** Reading the tree property by property cost
+  about 1–2.5 s per read on Fakturama's window, several times per step. One cache request now
+  returns the whole control-view subtree with the six properties used (same tree as before,
+  checked against the old walk). An editor that's already active reuses its snapshot.
+- **"Select a product" can pick by itself.** Live, typing a complete item number made the dialog
+  add the product and close. The run accepts that only if exactly one line for that SKU then
+  appears in the Items table; otherwise it stops.
+- **The mouse is parked on the title bar after each click.** Hover tooltips covered the Items rows
+  that are read by OCR.
 - **Polling uses cheap reads.** While waiting for a cell value, the run does one OCR pass of the
   already known table rectangle (about 0.1–0.2 s) instead of a full UIA walk of the window (about
   1.5 s). The final verification still uses a stable double read.

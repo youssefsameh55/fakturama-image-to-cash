@@ -58,8 +58,58 @@ class Snapshot:
 
     @classmethod
     def take(cls, root: object, max_depth: int = 25) -> Snapshot:
-        """Walk `root` (a pywinauto wrapper or UIAElementInfo) depth-first."""
+        """Snapshot of `root` (a pywinauto wrapper or UIAElementInfo).
+
+        Fast path: ONE UIA cache request returns the whole control-view subtree with the six
+        properties used here (measured: ~0.08 s for 64 elements vs ~1-2 s for a property-by-
+        property walk of Fakturama's window). Fallback: the plain recursive walk (also used
+        for the fake trees in offline tests).
+        """
         info = getattr(root, "element_info", root)
+        element = getattr(info, "element", None)
+        if element is not None and hasattr(element, "BuildUpdatedCache"):
+            try:
+                return cls._take_cached(element, max_depth)
+            except Exception:  # noqa: BLE001 - fall back to the slow but simple walk
+                pass
+        return cls._take_walk(info, max_depth)
+
+    @classmethod
+    def _take_cached(cls, element: object, max_depth: int) -> Snapshot:
+        from pywinauto.uia_defines import IUIA
+        from pywinauto.uia_element_info import UIAElementInfo
+
+        u = IUIA()
+        dll = u.UIA_dll
+        request = u.iuia.CreateCacheRequest()
+        for pid in (dll.UIA_NamePropertyId, dll.UIA_ControlTypePropertyId, dll.UIA_AutomationIdPropertyId,
+                    dll.UIA_ClassNamePropertyId, dll.UIA_BoundingRectanglePropertyId, dll.UIA_IsEnabledPropertyId):
+            request.AddProperty(pid)
+        request.TreeScope = dll.TreeScope_Subtree
+        request.TreeFilter = u.iuia.ControlViewCondition   # same tree as pywinauto's children()
+        cached = element.BuildUpdatedCache(request)        # type: ignore[attr-defined]
+        types = u.known_control_type_ids
+        nodes: list[Node] = []
+
+        def visit(el: object, parent: int | None, depth: int) -> None:
+            r = el.CachedBoundingRectangle  # type: ignore[attr-defined]
+            node = Node(len(nodes), UIAElementInfo(el), types.get(el.CachedControlType, ""),  # type: ignore[attr-defined]
+                        el.CachedName or "", el.CachedAutomationId or "",  # type: ignore[attr-defined]
+                        el.CachedClassName or "", Rect(r.left, r.top, r.right, r.bottom),  # type: ignore[attr-defined]
+                        parent, depth, bool(el.CachedIsEnabled))  # type: ignore[attr-defined]
+            nodes.append(node)
+            if depth >= max_depth:
+                return
+            kids = el.GetCachedChildren()  # type: ignore[attr-defined]
+            if kids:
+                for i in range(kids.Length):
+                    visit(kids.GetElement(i), node.index, depth + 1)
+
+        visit(cached, None, 0)
+        return cls(nodes)
+
+    @classmethod
+    def _take_walk(cls, info: object, max_depth: int) -> Snapshot:
         nodes: list[Node] = []
 
         def visit(el: object, parent: int | None, depth: int) -> None:

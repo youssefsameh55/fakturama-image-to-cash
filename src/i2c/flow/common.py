@@ -4,7 +4,7 @@ from __future__ import annotations
 import logging
 from typing import Callable
 
-from i2c.errors import UIError
+from i2c.errors import SelectorClosed, UIError
 from i2c.flow.context import RunContext
 from i2c.ui.find import Snapshot
 from i2c.ui.geom import Rect
@@ -20,6 +20,18 @@ def click_point(x: int, y: int) -> None:
     from pywinauto import mouse
 
     mouse.click(button="left", coords=(int(x), int(y)))
+
+
+def park_mouse(ctx: RunContext) -> None:
+    """Move the pointer onto the main window's title bar (rect from UIA): hover tooltips such as
+    'Pick an item from the list of all products' otherwise cover table rows that are OCR'd."""
+    from pywinauto import mouse
+
+    try:
+        r = ctx.app.rect()
+        mouse.move(coords=(r.left + r.width // 2, r.top + 20))
+    except Exception:  # noqa: BLE001 - cosmetic, never fail a step for it
+        log.debug("could not park the mouse", exc_info=True)
 
 
 def save_enabled(ctx: RunContext) -> bool:
@@ -75,6 +87,7 @@ def activate_tab(ctx: RunContext, snap: Snapshot, name: str, ready: Callable[[],
                       f"{[w.text for w in words]}")
     ctx.targets.append(box)
     click_point(*box.center)
+    park_mouse(ctx)
     wait_until(ready, ctx.timeout(), ctx.interval, desc=what)
 
 
@@ -82,9 +95,10 @@ def activate_editor(ctx: RunContext, name: str) -> Snapshot:
     """Bring an open editor tab (e.g. 'New Order', also '*New Order') to the front.
     Only the active editor's controls are exposed via UIA (probe), so wait for its pane."""
     snap = ctx.snapshot()
-    if not snap.find("Pane", name=name):
-        activate_tab(ctx, snap, name, lambda: bool(ctx.snapshot().find("Pane", name=name)),
-                     f"editor {name!r} to become active")
+    if snap.find("Pane", name=name):
+        return ctx.editor(name, snap)          # already active: reuse this snapshot
+    activate_tab(ctx, snap, name, lambda: bool(ctx.snapshot().find("Pane", name=name)),
+                 f"editor {name!r} to become active")
     return ctx.editor(name)
 
 
@@ -139,7 +153,9 @@ def open_selector(ctx: RunContext, editor: str, label_key: str, dialog_title: st
     icon = ed.icons_below(ctx.label(label_key))[0]
     ctx.targets.append(icon.rect)
     click(icon.wrapper())
-    return ctx.app.wait_dialog(dialog_title, ctx.timeout("window"), ready="Edit")
+    dialog = ctx.app.wait_dialog(dialog_title, ctx.timeout("window"), ready="Edit")
+    park_mouse(ctx)
+    return dialog
 
 
 def search_selector(ctx: RunContext, dialog_title: str, text: str, kind: str) -> tuple[Table, Snapshot]:
@@ -149,7 +165,12 @@ def search_selector(ctx: RunContext, dialog_title: str, text: str, kind: str) ->
     snap = ctx.app.snapshot(dialog)
     box = snap.by_label(ctx.label("dialogs.search"), control_types=["Edit"])
     ctx.targets.append(box.rect)
-    set_text(box.wrapper(), text, methods=("keys",))
+    try:
+        set_text(box.wrapper(), text, methods=("keys",))
+    except UIError as exc:
+        if ctx.app.find_dialog(dialog_title) is None:
+            raise SelectorClosed(f"{dialog_title!r} closed while typing {text!r}") from exc
+        raise
     table = read_rect(ctx, snap.table_rect(), kind, equal_reads=3)
     ctx.targets.extend([box.rect] + [r.rect for r in table.rows])
     return table, snap
@@ -167,6 +188,7 @@ def pick_row_and_ok(ctx: RunContext, dialog_title: str, table: Table, index: int
     point = table.cell_point(row, click_column) or row.click_point()
     ctx.targets.append(row.rect)
     mouse.double_click(button="left", coords=(int(point[0]), int(point[1])))
+    park_mouse(ctx)
     try:
         ctx.app.wait_dialog_closed(dialog_title, 3.0)
         return

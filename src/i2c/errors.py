@@ -48,5 +48,10 @@ class ElementNotFound(UIError):
     """No control matched the query."""
 
 
+class SelectorClosed(UIError):
+    """A selector dialog closed by itself while typing its search text (Fakturama's
+    'Select a product' can pick the typed item number and close, seen live)."""
+
+
 class AmbiguousElement(UIError):
     """More than one control matched a query that must be unique."""
