@@ -64,10 +64,10 @@ vat:
 labels:                                # confirmed against UIA probe dumps (artifacts/probe, 2026-11-07)
   toolbar:                             # Button names are the tooltips
     new_order: "Create: New Order"
+    new_product: "Create a new product"  # top toolbar: works whatever the left panel / bottom view shows
     save: "Save the current contents"
   left_panel:                          # Text controls in the Navigation View
     new_contact: "New Contact"
-    new_product: "New product"
     documents: "Documents"
     vats: "VATs"
     terms_of_payment: "terms of payment"

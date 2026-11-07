@@ -248,7 +248,9 @@ def _create_product(ctx: RunContext, item: Item) -> None:
     if [n for n in ctx.app.names("TabItem") if n.lstrip("*") == editor]:
         raise ManualReviewRequired(f"an unsaved '{editor}' editor is already open; close it and re-run",
                                    ctx.current_step)
-    click(ctx.snapshot().one("Text", _L(ctx, "left_panel.new_product")).wrapper())
+    # Top-toolbar button, not the left-panel "New product" link: once the VATs view has been opened
+    # from the left panel, clicking that link no longer opens the editor (seen live 2026-11-07).
+    click(ctx.snapshot().one("Button", _L(ctx, "toolbar.new_product")).wrapper())
     wait_until(lambda: ctx.app.find_first("Pane", editor) is not None, ctx.timeout("window"), ctx.interval,
                desc="New product editor")
     ed = ctx.editor(editor)
