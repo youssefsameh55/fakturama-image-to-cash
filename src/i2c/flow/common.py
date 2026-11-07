@@ -114,6 +114,23 @@ def activate_tab(ctx: RunContext, snap: Snapshot, name: str, ready: Callable[[],
         except Exception:  # noqa: BLE001
             log.info("accessibility select did not switch to %r; using OCR on the tab bar", name)
     bar = tab_bar_rect(snap, item)
+    folder = snap.parent(item)
+    # Remembered label position: only valid while the folder holds exactly the same tabs in the
+    # same order and the bar has not moved (UIA, cheap) - so a stale position (e.g. over a
+    # tab's close button after tabs changed) is never clicked. The switch is verified either way.
+    key = (bar.as_tuple(), tuple(n.name for n in snap.children(folder) if n.control_type == "TabItem")
+           if folder else (), name)
+    cached = ctx.tab_cache.get(key)
+    if cached is not None:
+        ctx.targets.append(cached)
+        click_point(*cached.center)
+        park_mouse(ctx)
+        try:
+            wait_until(ready, 2.0, ctx.interval, desc=what)
+            return
+        except Exception:  # noqa: BLE001
+            log.info("remembered position of tab %r did not switch; reading the tab bar again", name)
+            ctx.tab_cache.pop(key, None)
     words, _ = ocr_rect(bar, float(ctx.settings.get("ocr.upscale", 1)), ctx.settings.get("ocr.language", "en-US"))
     box = find_phrase(words, name)
     if box is None:
@@ -123,6 +140,7 @@ def activate_tab(ctx: RunContext, snap: Snapshot, name: str, ready: Callable[[],
     click_point(*box.center)
     park_mouse(ctx)
     wait_until(ready, ctx.timeout(), ctx.interval, desc=what)
+    ctx.tab_cache[key] = box
 
 
 def activate_editor(ctx: RunContext, name: str) -> Snapshot:
@@ -192,7 +210,8 @@ def read_rect(ctx: RunContext, rect: Rect, kind: str, equal_reads: int = 2) -> T
     expected = ctx.settings.get(f"tables.{kind}")
     kw = dict(scale=float(ctx.settings.get("ocr.upscale", 1)),
               language=ctx.settings.get("ocr.language", "en-US"),
-              row_tolerance=int(ctx.settings.get("ocr.row_merge_tolerance_px", 8)))
+              row_tolerance=int(ctx.settings.get("ocr.row_merge_tolerance_px", 8)),
+              recover_columns=ctx.settings.get(f"tables_checked.{kind}"))
     last: dict = {}
 
     def read() -> tuple:
@@ -242,7 +261,7 @@ def search_selector(ctx: RunContext, dialog_title: str, text: str, kind: str) ->
 
     if wait_until(typed_or_closed, 3.0, 0.1, desc=f"search text {text!r}") == "closed":
         raise SelectorClosed(f"{dialog_title!r} closed while typing {text!r}")
-    table = read_rect(ctx, snap.table_rect(), kind, equal_reads=3)
+    table = read_rect(ctx, snap.table_rect(), kind)          # D9: 2 identical reads
     ctx.targets.extend([box.rect] + [r.rect for r in table.rows])
     return table, snap
 

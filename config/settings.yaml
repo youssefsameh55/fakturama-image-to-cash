@@ -31,6 +31,15 @@ tables:                          # canonical column headers (OCR text is fuzzy-m
   documents: ["Document", "Date", "Name", "Cust.Ref.", "State", "Total", "Printed"]
   vats: ["Standard", "Name", "Description", "Value"]
   debtors: ["No.", "First Name", "Name", "Company", "ZIP", "City"]
+
+tables_checked:                  # columns some check reads; OCR re-reads of dropped cells only here
+  select_address: ["No.", "First Name", "Name", "Company", "ZIP", "City"]
+  select_product: ["Item No.", "Name"]
+  items: ["Qty.", "Item No.", "VAT", "U.Price", "Discount", "Price"]
+  documents: ["Document", "Date", "Cust.Ref.", "State", "Total"]
+  vats: ["Name", "Description", "Value"]
+  payments: ["Name", "Description"]
+  debtors: ["No.", "First Name", "Name", "Company"]
   payments: ["Standard", "Name", "Description", "Discount", "Disc. Days", "Net Days"]
 
 extraction:                      # PROMPT_VERSION lives in src/i2c/extract/prompt.py (it versions code)

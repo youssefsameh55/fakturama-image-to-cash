@@ -16,7 +16,7 @@ from i2c.flow.context import RunContext
 from i2c.flow.debtor import _address_box_text, _expect_address, show_address_tab
 from i2c.flow.order import _price_mode_combo
 from i2c.flow.runner import Step
-from i2c.flow.save_order import check_document, find_document, state_is, verify_lines, verify_totals
+from i2c.flow.save_order import check_document, documents_by_cust_ref, state_is, verify_lines, verify_totals
 from i2c.calc import close, parse_decimal
 from i2c.match import cell_matches, norm
 from i2c.models import PaymentStatus
@@ -160,24 +160,29 @@ def save_invoice(ctx: RunContext) -> str:
 
 
 def verify_documents(ctx: RunContext) -> str:
+    """Brief 5.5: the invoice row (state + total) and the source order (still open, same Cust.Ref.
+    and total) - both verified from ONE search of Data > Documents for the Cust.Ref."""
     o = ctx.order
     inv_no, order_no = ctx.results.get("invoice_no"), ctx.results.get("order_no")
-    inv = find_document(ctx, inv_no)
+    rows, ref_by_filter = documents_by_cust_ref(ctx, [inv_no, order_no])
+    inv, order = rows[inv_no], rows[order_no]
     warnings = ctx.results.setdefault("warnings", [])
-    problems = check_document(inv, None, o.external_reference, o.totals.gross, warnings)  # invoice date = today
+    ref = None if ref_by_filter else o.external_reference
+    problems = check_document(inv, None, ref, o.totals.gross, warnings)          # invoice date = today
     want_state = "paid" if o.payment.status is PaymentStatus.PAID else "unpaid"
     if not state_is(ctx, inv, want_state):
         problems.append(f"State {inv.get('State')!r} (expected {_L(ctx, 'documents_state.' + want_state)!r})")
     if problems:
         raise UIError(f"invoice {inv_no} in Documents differs: {problems} (row {inv})")
-    order = find_document(ctx, order_no)
-    order_problems = check_document(order, o.order_date, o.external_reference, o.totals.gross, warnings)
+    order_problems = check_document(order, o.order_date, ref, o.totals.gross, warnings)
     if not state_is(ctx, order, "open"):
         order_problems.append(f"State {order.get('State')!r} (expected {_L(ctx, 'documents_state.open')!r})")
     if order_problems:
         raise UIError(f"order {order_no} changed in Documents: {order_problems} (row {order})")
     ctx.results["invoice_document"], ctx.results["order_document"] = inv, order
-    return f"invoice {inv_no}: {inv.get('State')!r} total {inv.get('Total')}; order {order_no} still listed: {order.get('State')!r}"
+    how = "both listed under the Cust.Ref. search" if ref_by_filter else "Cust.Ref. checked in the editors"
+    return (f"invoice {inv_no}: {inv.get('State')!r} total {inv.get('Total')}; order {order_no} still "
+            f"{order.get('State')!r} total {order.get('Total')} ({how})")
 
 
 STEPS = [

@@ -23,6 +23,7 @@ class RunContext:
     run_dir: Path
     results: dict[str, Any] = field(default_factory=lambda: {"entities": {}})
     targets: list[Rect] = field(default_factory=list)   # outlined in the current step's screenshot
+    tab_cache: dict = field(default_factory=dict)        # (bar, tab list, name) -> OCR box of the label
     current_step: str = ""
 
     # ------------------------------------------------------------ config access

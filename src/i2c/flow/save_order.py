@@ -8,7 +8,7 @@ import logging
 from decimal import Decimal
 
 from i2c.calc import close, parse_decimal
-from i2c.errors import ManualReviewRequired, UIError
+from i2c.errors import ManualReviewRequired, UIError, UITimeout
 from i2c.flow.common import activate_editor, open_view, read_rect, save_once
 from i2c.flow.context import RunContext
 from i2c.flow.debtor import verify_order_addresses
@@ -148,29 +148,56 @@ def save_order(ctx: RunContext) -> str:
     return f"order {number} saved (tab {name!r}); Cust.Ref. {ref} and Date {when} re-read exactly"
 
 
-def find_document(ctx: RunContext, number: str) -> dict:
-    """Data > Documents: type `number` into the view's search once, maximize the view (full-width
-    columns), then poll the OCR'd list until exactly one row has that document number."""
+def find_documents(ctx: RunContext, query: str, numbers: list[str], timeout: float | None = None) -> dict[str, dict]:
+    """Data > Documents: type `query` into the view's search once, maximize the view (full-width
+    columns) and poll the OCR'd list until every number in `numbers` is listed exactly once.
+    One read can verify several documents (order + invoice)."""
     from i2c.flow.common import maximized_view, read_rect
 
     view_name = _L(ctx, "views.documents")
     view = open_view(ctx, "documents", view_name)
     box = view.by_label(_L(ctx, "dialogs.search"), ["Edit"])
-    set_text(box.wrapper(), number, methods=("keys",))
+    set_text(box.wrapper(), query, methods=("keys",))
     with maximized_view(ctx, view_name) as big:
         rect = big.table_rect()
         ctx.targets.append(rect)
 
-        def row() -> dict | None:
-            rows = read_rect(ctx, rect, "documents").as_dicts()
-            hits = [r for r in rows if code_matches(r.get("Document"), number)]
-            if len(hits) > 1:
-                raise UIError(f"{len(hits)} documents numbered {number!r}: {rows}")
-            return hits[0] if hits else None
+        def rows() -> dict[str, dict] | None:
+            listed = read_rect(ctx, rect, "documents").as_dicts()
+            found: dict[str, dict] = {}
+            for number in numbers:
+                hits = [r for r in listed if code_matches(r.get("Document"), number)]
+                if len(hits) > 1:
+                    raise UIError(f"{len(hits)} documents numbered {number!r}: {listed}")
+                if not hits:
+                    return None
+                found[number] = hits[0]
+            return found
 
-        found = wait_until(row, ctx.timeout(), ctx.interval, desc=f"document {number} in Data > Documents")
-        ctx.evidence.shot(f"{ctx.current_step}_documents", f"Documents (maximized): {found}", [rect])
-        return found
+        result = wait_until(rows, timeout or ctx.timeout(), ctx.interval,
+                            desc=f"documents {numbers} under search {query!r}")
+        ctx.evidence.shot(f"{ctx.current_step}_documents", f"Documents (search {query!r}): {list(result.values())}",
+                          [rect])
+        return result
+
+
+def documents_by_cust_ref(ctx: RunContext, numbers: list[str]) -> tuple[dict[str, dict], bool]:
+    """Brief 4.5 / 5.5 check Cust.Ref. in Documents. Searching the list FOR the Cust.Ref. text makes
+    Fakturama's own filter confirm it (exact, no OCR of the hyphenated code). Fallback if the
+    rows are not listed under that search: search by number; the Cust.Ref. is then covered by
+    the exact UIA re-read of the saved editor and a warning is recorded.
+    Returns (rows by number, cust_ref_confirmed_by_filter)."""
+    ref = ctx.order.external_reference or ""
+    try:
+        return find_documents(ctx, ref, numbers, timeout=5.0), True
+    except UITimeout:      # not listed under the Cust.Ref. search (other UI errors still stop the run)
+        log.warning("documents %s not listed when searching Cust.Ref. %r; searching by number", numbers, ref)
+        rows: dict[str, dict] = {}
+        for n in numbers:
+            rows.update(find_documents(ctx, n, [n]))
+        ctx.results.setdefault("warnings", []).append(
+            f"Documents search by Cust.Ref. {ref!r} did not list {numbers}; Cust.Ref. verified in the saved editors")
+        return rows, False
 
 
 def money_matches(cell: str | None, want: Decimal) -> bool:
@@ -211,17 +238,19 @@ def check_document(row: dict, date, cust_ref: str | None, total: Decimal | None,
 
 
 def verify_order_document(ctx: RunContext) -> str:
+    """Brief 4.5: Data > Documents shows the order with Date, Cust.Ref., open state and Total."""
     number = ctx.results.get("order_no")
-    row = find_document(ctx, number)
+    rows, ref_by_filter = documents_by_cust_ref(ctx, [number])
+    row = rows[number]
     ctx.results["order_document"] = row
-    warnings = ctx.results.setdefault("warnings", [])
-    problems = check_document(row, ctx.order.order_date, ctx.order.external_reference, ctx.order.totals.gross,
-                              warnings)
+    problems = check_document(row, ctx.order.order_date, None if ref_by_filter else ctx.order.external_reference,
+                              ctx.order.totals.gross, ctx.results.setdefault("warnings", []))
     if not state_is(ctx, row, "open"):
         problems.append(f"State {row.get('State')!r} (expected {_L(ctx, 'documents_state.open')!r})")
     if problems:
         raise UIError(f"order {number} in Documents differs: {problems} (row {row})")
-    return f"Documents: {row.get('Document')} {row.get('Date')} {row.get('State')} {row.get('Total')}"
+    how = "listed under its Cust.Ref. search" if ref_by_filter else "Cust.Ref. checked in the editor"
+    return f"Documents: {row.get('Document')} {row.get('Date')} {row.get('State')} {row.get('Total')} ({how})"
 
 
 def create_invoice(ctx: RunContext) -> str:

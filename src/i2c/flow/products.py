@@ -144,7 +144,8 @@ def _quick_read(ctx: RunContext, rect: Rect) -> Table:
     table, _ = read_table(rect, ctx.settings.get("tables.items"),
                           scale=float(ctx.settings.get("ocr.upscale", 1)),
                           language=ctx.settings.get("ocr.language", "en-US"),
-                          row_tolerance=int(ctx.settings.get("ocr.row_merge_tolerance_px", 8)))
+                          row_tolerance=int(ctx.settings.get("ocr.row_merge_tolerance_px", 8)),
+                          recover_columns=ctx.settings.get("tables_checked.items"))
     return table
 
 

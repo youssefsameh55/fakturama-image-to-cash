@@ -155,3 +155,16 @@ def test_positional_headers_only_when_consistent():
     assert _positional_headers(["Pos.", "", ""], exp, 4) == exp + [""]
     assert _positional_headers(["Qty.", "", ""], exp, 3) == ["Qty.", "", ""]    # out of place: keep OCR
     assert _positional_headers(["Pos.", "", ""], exp, 5) == ["Pos.", "", ""]    # column count differs
+
+
+def test_recovery_limited_to_checked_columns():
+    rect = Rect(0, 0, 400, 100)
+    img = Image.new("L", (400, 100), 255)
+    d = ImageDraw.Draw(img)
+    for box in ((10, 10, 60, 25), (210, 10, 250, 25), (10, 50, 80, 65), (370, 50, 380, 65)):
+        d.rectangle(box, fill=0)
+    words = [w("Name", 10, 10, 50, 15), w("Qty.", 210, 10, 40, 15), w("Widget", 10, 50, 70, 15)]
+    table = build_table(words, rect, lines=[200])
+    calls = []
+    recover_dropped_cells(table, img, rect, lambda im, s: calls.append(1) or [], 5, 30, only={"Name"})
+    assert calls == []                    # 'Qty.' is not checked here -> no OCR re-reads

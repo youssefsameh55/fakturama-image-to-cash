@@ -165,6 +165,14 @@ See `PLAN.md` §9 (G1–G6). Additional implementation decisions:
   appears in the Items table; otherwise it stops.
 - **The mouse is parked on the title bar after each click.** Hover tooltips covered the Items rows
   that are read by OCR.
+- **Speed without dropping required checks.** Each brief step's ✔ check is kept, including
+  4.1's pre-save re-check of addresses and lines. What's cheaper: tab label positions are
+  remembered while the folder's tab list (from UIA) is unchanged, so a stale position is never
+  clicked, and every switch is still verified. Data › Documents is searched once for the order's
+  Cust.Ref.: Fakturama's own filter then confirms the Cust.Ref. (4.5/5.5) with no OCR of that code,
+  and one read covers both order and invoice. OCR re-reads of dropped cells are limited to columns
+  some check reads (`tables_checked`). A stable read is 2 identical reads (D9). Screenshots are
+  encoded in the background.
 - **Polling uses cheap reads.** While waiting for a cell value, the run does one OCR pass of the
   already known table rectangle (about 0.1–0.2 s) instead of a full UIA walk of the window (about
   1.5 s). The final verification still uses a stable double read.

@@ -355,7 +355,8 @@ def _reread_variants(cell: Image.Image, head: Image.Image, ocr_fn):  # noqa: ANN
 
 
 def recover_dropped_cells(table: Table, img: Image.Image, rect: Rect, ocr_fn,  # noqa: ANN001
-                          header_top: int, header_bottom: int, pad: int = 4) -> Table:
+                          header_top: int, header_bottom: int, pad: int = 4,
+                          only: set[str] | None = None) -> Table:
     """Re-read cells that OCR dropped fully (empty but inked) or partly (ink extends beyond the
     words read: 'VAT 19%' came back as 'VAT', seen live), using header context. A partial
     cell's re-read is kept only if it still contains the first reading.
@@ -375,6 +376,8 @@ def recover_dropped_cells(table: Table, img: Image.Image, rect: Rect, ocr_fn,  #
     for row in table.rows:
         cells = dict(row.cells)
         for i, ((a, b), key) in enumerate(zip(table.columns, keys)):
+            if only is not None and key not in only:
+                continue                      # no check reads this column: skip its OCR re-reads
             box = (a - rect.left + 3, row.rect.top - rect.top - pad, b - rect.left - 3, row.rect.bottom - rect.top + pad)
             crop = gray.crop(box)
             ink = ink_bbox(crop)
@@ -419,7 +422,8 @@ def header_band(words: list[Word], row_tolerance: int, pad: int = 6,
 
 
 def read_table(rect: Rect, expected_headers: list[str] | None = None, *, scale: float = 1.0,
-               language: str = "en-US", row_tolerance: int = 8) -> tuple[Table, Image.Image]:
+               language: str = "en-US", row_tolerance: int = 8,
+               recover_columns: list[str] | None = None) -> tuple[Table, Image.Image]:
     """Live: capture `rect` (from UIA), OCR it and assemble the table. Returns (table, image)."""
     from i2c.ui.ocr import ocr_image, ocr_rect
 
@@ -433,5 +437,6 @@ def read_table(rect: Rect, expected_headers: list[str] | None = None, *, scale: 
     if band and table.rows:
         table = recover_dropped_cells(table, img, rect,
                                       lambda im, s: ocr_image(im, (0, 0), s, language),
-                                      band[0], band[1])
+                                      band[0], band[1],
+                                      only=set(recover_columns) if recover_columns else None)
     return table, img
