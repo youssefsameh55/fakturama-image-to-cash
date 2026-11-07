@@ -156,21 +156,21 @@ def search_selector(ctx: RunContext, dialog_title: str, text: str, kind: str) ->
 
 def pick_row_and_ok(ctx: RunContext, dialog_title: str, table: Table, index: int,
                     click_column: str = "No.") -> None:
-    """Select a row by clicking a data cell (from its OCR word box), verify the row is
-    highlighted, then OK. Live: clicking the row-number cell left nothing selected, and OK
-    then closed the dialog without filling the order."""
-    from i2c.ui.ocr import capture
-    from i2c.ui.table import looks_selected
+    """Choose a row by double-clicking one of its data cells (point from the OCR word box);
+    the dialog takes the row and closes. Live: single clicks did not select the row (neither
+    on the row number nor on a data cell), double-click does (found by the user). If the
+    dialog is still open afterwards, OK is pressed once. Callers verify the result."""
+    from pywinauto import mouse
 
     row = table.rows[index]
     point = table.cell_point(row, click_column) or row.click_point()
     ctx.targets.append(row.rect)
-    click_point(*point)
-    band = Rect(row.rect.left, row.rect.top - 4, row.rect.right, row.rect.bottom + 4)
+    mouse.double_click(button="left", coords=(int(point[0]), int(point[1])))
     try:
-        wait_until(lambda: looks_selected(capture(band)), 3.0, ctx.interval, desc="row highlight")
-    except Exception as exc:  # noqa: BLE001
-        raise UIError(f"clicked row {index + 1} at {point} but it does not look selected") from exc
+        ctx.app.wait_dialog_closed(dialog_title, 3.0)
+        return
+    except Exception:  # noqa: BLE001
+        log.info("dialog %r still open after double-click; pressing OK", dialog_title)
     snap = ctx.app.snapshot(ctx.app.wait_dialog(dialog_title))
     click(snap.one("Button", ctx.label("dialogs.ok")).wrapper())
     ctx.app.wait_dialog_closed(dialog_title, ctx.timeout("window"))
