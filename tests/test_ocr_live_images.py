@@ -33,3 +33,17 @@ def test_fully_dropped_numbers_payment():
     (row,) = read("payments_probe.png")
     assert (row["Name"], row["Description"], row["Discount"], row["Disc. Days"], row["Net Days"]) == \
         ("Cash", "Pay Cash", "0%", "0", "0")
+
+
+def test_selected_row_light_header_lines_and_stroke_words():
+    from i2c.calc import parse_decimal
+    img = Image.open(FIX / "items_selected_live.png")
+    r = Rect(0, 0, img.width, img.height)
+    words = ocr.ocr_image(img)
+    band = header_band(words, 8)
+    lines = detect_vertical_lines(img, *band)
+    assert len(lines) == 9                       # grey header, light separators
+    exp = ["Pos.", "Qty.", "Item No.", "Picture", "Name", "Description", "VAT", "U.Price", "Discount", "Price"]
+    (row,) = build_table(words, r, lines, exp).as_dicts()
+    assert parse_decimal(row["Qty."]) == 1 and row["U.Price"] == "$250.00" and row["Price"] == "$250.00"
+    assert row["Discount"] == "0.00 %" and parse_decimal(row["VAT"]) == 19

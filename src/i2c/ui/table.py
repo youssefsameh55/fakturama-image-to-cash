@@ -109,15 +109,23 @@ def detect_vertical_lines(gray: Image.Image, top: int, bottom: int, min_contrast
     band = gray.crop((0, top, gray.width, bottom))
     w, h = band.size
     px = band.tobytes()
-    hits = [0] * w
+    dark = [0] * w
+    light = [0] * w
     for y in range(h):
         row = px[y * w:(y + 1) * w]
         for x in range(1, w - 1):
-            v = row[x] + min_contrast
-            if v <= row[x - 1] and (v <= row[x + 1] or (x + 2 < w and v <= row[x + 2])):
-                hits[x] += 1
+            c, left = row[x], row[x - 1]
+            right = row[x + 1]
+            right2 = row[x + 2] if x + 2 < w else right
+            if c + min_contrast <= left and (c + min_contrast <= right or c + min_contrast <= right2):
+                dark[x] += 1
+            # Selected rows turn the header grey with LIGHT separators (seen live)
+            if c - min_contrast >= left and (c - min_contrast >= right or c - min_contrast >= right2):
+                light[x] += 1
     need = min_fraction * h
-    return merge_close([x for x in range(w) if hits[x] >= need])
+    lines = [x for x in range(w) if dark[x] >= need]
+    light_lines = [x for x in range(w) if light[x] >= need]
+    return merge_close(lines if len(lines) >= len(light_lines) else light_lines)
 
 
 def merge_close(xs: list[int], gap: int = 4) -> list[int]:
@@ -203,6 +211,9 @@ def match_headers(raw: list[str], expected: list[str] | None, min_ratio: float =
 
 # ---------------------------------------------------------------- assembly
 
+_STROKES = {"I", "|", "l", "1", "!", "i", "/"}
+
+
 def build_table(words: list[Word], table_rect: Rect, lines: list[int] | None,
                 expected_headers: list[str] | None = None, row_tolerance: int = 8) -> Table:
     """Assemble a Table from OCR words (screen coords) and grid lines (screen x positions).
@@ -210,6 +221,10 @@ def build_table(words: list[Word], table_rect: Rect, lines: list[int] | None,
     The first row of words is the header row. `lines=None`/empty -> header-gap fallback.
     """
     words = [w for w in words if w.text.strip()]
+    if lines:
+        # A selected row draws its grid lines in white on blue; OCR reads them as I | l 1 (live).
+        words = [w for w in words
+                 if not (w.text.strip() in _STROKES and any(abs(w.rect.cx - x) <= 8 for x in lines))]
     rows = group_rows(words, row_tolerance)
     if not rows:
         return Table([], [], [], [])
