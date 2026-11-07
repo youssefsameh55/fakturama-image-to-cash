@@ -138,6 +138,7 @@ def cmd_run(args: argparse.Namespace) -> int:
     from i2c.config import load_settings
     from i2c.flow import debtor as debtor_stage
     from i2c.flow import order as order_stage
+    from i2c.flow import products as products_stage
     from i2c.flow.context import RunContext
     from i2c.flow.runner import run_flow
     from i2c.logging_setup import new_run_id, setup_logging
@@ -168,7 +169,8 @@ def cmd_run(args: argparse.Namespace) -> int:
     app.focus()
     ctx = RunContext(settings, order, app, Evidence(run_dir, area=app.rect), run_dir)
 
-    implemented = {"order": order_stage.STEPS, "debtor": debtor_stage.STEPS}
+    implemented = {"order": order_stage.STEPS, "debtor": debtor_stage.STEPS,
+                   "products": products_stage.make_steps(order.items)}
     names = STAGES[STAGES.index(args.start_at):] if args.start_at else STAGES
     if args.start_at:
         log.warning("starting at stage %r: earlier stages are assumed done in the open editors", args.start_at)

@@ -34,3 +34,20 @@ def gross(net: Decimal, vat: Decimal) -> Decimal:
 
 def close(a: Decimal, b: Decimal, tolerance: Decimal = TOLERANCE) -> bool:
     return abs(Decimal(a) - Decimal(b)) <= tolerance
+
+
+def parse_decimal(text: str | None) -> Decimal | None:
+    """First number in a UI/OCR text: '$1,234.50' -> 1234.50, '19.00 %' -> 19.00, '10%' -> 10,
+    'VAT 19%' -> 19, '2' -> 2. US-style display (Fakturama shows '$0.00'): ',' = thousands.
+    None if there is no number."""
+    import re
+
+    if not text:
+        return None
+    m = re.search(r"-?\d[\d,]*(?:\.\d+)?", text.replace(" ", ""))
+    if not m:
+        return None
+    try:
+        return Decimal(m.group(0).replace(",", ""))
+    except Exception:  # noqa: BLE001
+        return None

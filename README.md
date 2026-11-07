@@ -17,7 +17,8 @@ See `PLAN.md` for the full design. `DESIGN.md` (Part 1) will be written after th
 | M3 UI toolkit (find/wait/input/ocr/table/evidence) | done; checked live on VATs, terms of payment and Select the address |
 | M4 Run framework + stage `order` | done; live run verified (PO000001, Jul 14 2026, Cust.Ref., Net, With VAT) |
 | M5 Stage `debtor` (match / payment method / create / select) | done; verified live (create path and select-existing path) |
-| M6–M7 Flow stages | not started |
+| M6 Stage `products` (VAT, products, lines) | code done, offline-tested; live run pending |
+| M7 Stages `save_order` + `invoice` | not started |
 | M8 Deliverables | not started |
 
 ## Setup
@@ -115,6 +116,16 @@ See `PLAN.md` §9 (G1–G6). Additional implementation decisions:
   never the green +.
 - **`--start-at STAGE`** (development only) continues in the editors that are already open, so a
   stage can be re-run without redoing the previous ones.
+- **Selector rows are chosen by double-click.** One click on a row (on the row number or on a data
+  cell) didn't select it, so OK filled nothing into the order. Double-clicking a data cell, at a
+  point taken from the OCR word box, picks the row and closes the dialog. If the dialog is still
+  open afterwards, OK is pressed once. The order's address box is then checked against the source.
+- **Truncated table cells** ("Northstar Offic...", and its OCR variants such as
+  "Northstar Office . „") match when the source value starts with the visible text (at least 4
+  characters). If two rows could match that way, the run stops for manual review.
+- **An existing VAT's code isn't re-checked.** The VATs list has no VAT-code column, so reuse
+  checks Name and Value only. A newly created VAT always gets code S.
+- **The unit ("pcs") is extracted but not entered.** Fakturama's item line has no unit field.
 - **The Debtor's payment method is on the Miscellaneous tab.** There is no Payment tab.
 
 ## Skipped / not implemented

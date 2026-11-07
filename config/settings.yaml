@@ -128,6 +128,8 @@ labels:                                # confirmed against UIA probe dumps (arti
     description: "Description"
     value: "Value"
     category: "Category"
+    code: "VAT code (E-Invoice)"
+    code_item: "S (Standard rate)"         # combo item for VAT code S (default for a new rate)
   payment_editor:
     tab: "New Term of Payment"
     name: "Name"
@@ -143,7 +145,11 @@ labels:                                # confirmed against UIA probe dumps (arti
     tab: "New product"
     item_number: "Item Number"
     name: "Name"
-    vat: "VAT"
+    description: "Description"
+    price_gross: "Price (gross)"           # unnamed Edit right of the label
+    cost_price: "cost price (net)"
+    vat: "VAT"                             # ComboBox shows the VAT's Description
+    stock: "Stock"
   invoice_editor:
     tab: "New Invoice"
     paid: "paid"                           # CheckBox
