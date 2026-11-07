@@ -65,6 +65,21 @@ def test_falls_back_to_next_configured_key():
     assert anchor.sent == ["^{F4}", "%{F4}x"]
 
 
+def test_ignored_key_is_retried():
+    """Live: Ctrl+F4 right after a save was ignored once; the same key a moment later closes."""
+    ctx = make_ctx()
+    anchor = FakeAnchor(ctx.app, closes_on=None)
+    sent = anchor.type_keys
+
+    def second_time_closes(keys, **kw):
+        sent(keys, **kw)
+        if len(anchor.sent) == 2:
+            anchor.element_info.element.closed = True
+    anchor.type_keys = second_time_closes
+    assert close_saved_editor(ctx, anchor, "payment method") is True
+    assert anchor.sent == ["^{F4}", "^{F4}"]
+
+
 def test_key_that_changes_the_editor_stops_before_any_other_key():
     """The live failure: a close key typed a character -> editor dirty. Stop; never try Ctrl+F4 next
     (that would ask 'Save Parts')."""
@@ -94,6 +109,7 @@ def test_no_key_works_leaves_editor_open_with_warning():
     anchor = FakeAnchor(ctx.app, closes_on=None)
     assert close_saved_editor(ctx, anchor, "payment method") is False
     assert "could not be closed" in ctx.results["warnings"][0]
+    assert anchor.sent == ["^{F4}"] * 3          # retried, then left open
 
 
 def test_step_cost_is_the_change_since_before():

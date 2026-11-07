@@ -23,6 +23,7 @@ input:
   key_pause: 0.01                # s between keystrokes (pywinauto default 0.05)
   close_editor_keys: ["^{F4}"]   # close a SAVED master-data editor (fewer open editors = faster UIA reads).
                                  # Live: Ctrl+W is unbound and typed 'w' into the field; Ctrl+F4 closes
+  close_editor_attempts: 3       # live: Ctrl+F4 right after a save was sometimes ignored; retried
   date_method: arrows            # arrows | text. Live: text set via UIA reverted to today -> arrow keys per field
 
 tables:                          # canonical column headers (OCR text is fuzzy-matched to these)

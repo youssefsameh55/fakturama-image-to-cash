@@ -371,7 +371,7 @@ shared helpers (tabs, open/maximize a view, read a table, selectors, save once) 
 
 ## 11. Testing strategy
 
-- **Offline unit (136 tests):** calc; validate (golden fixture + mutated variants); match
+- **Offline unit (137 tests):** calc; validate (golden fixture + mutated variants); match
   (none/exact/ambiguous/conflict); table grouping (synthetic OCR words); extraction service retry +
   cache with a fake provider; plus replays of real UIA dumps (`fixtures/uia/`) and live OCR
   captures (`fixtures/ocr/`) for control finding, tables, products and invoice checks.

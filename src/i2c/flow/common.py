@@ -93,22 +93,28 @@ def close_saved_editor(ctx: RunContext, anchor, what: str) -> bool:  # noqa: ANN
     Only non-character keys: live, Ctrl+W is not bound in Fakturama and typed a 'w' into the
     focused Name box (editor dirty again -> Ctrl+F4 then asked 'Save Parts'). Ctrl+F4 closes the
     editor and types nothing. Should a key ever change the editor anyway (Save enabled again),
-    the run stops at once instead of trying another key."""
+    the run stops at once instead of trying another key.
+
+    Retried: live, Ctrl+F4 sent right after a save was sometimes ignored (payment method and
+    Debtor stayed open while Fakturama was still renaming the saved editor's tab); the same key
+    a moment later closes it. Every attempt re-proves focus and re-checks dialogs and Save."""
     if save_enabled(ctx):
         log.warning("not closing the %s editor: it has unsaved changes", what)
         return False
     element = anchor.element_info.element
     dialogs_before = _child_windows(ctx)
-    for keys in ctx.settings.get("input.close_editor_keys", ["^{F4}"]):
+    keys_list = ctx.settings.get("input.close_editor_keys", ["^{F4}"])
+    attempts = int(ctx.settings.get("input.close_editor_attempts", 3))
+    for attempt, keys in ((a, k) for a in range(1, attempts + 1) for k in keys_list):
         if _gone(element):
             break
         ensure_focus(anchor)
         anchor.type_keys(keys, set_foreground=False)
         try:
             wait_until(lambda: _gone(element) or bool(_child_windows(ctx) - dialogs_before),
-                       2.0, 0.1, desc=f"{what} editor to close")
-        except Exception:  # noqa: BLE001 - try the next key
-            log.info("%s did not close the %s editor", keys, what)
+                       1.5, 0.1, desc=f"{what} editor to close")
+        except Exception:  # noqa: BLE001 - try again / the next key
+            log.info("%s (attempt %d) did not close the %s editor", keys, attempt, what)
         new = _child_windows(ctx) - dialogs_before
         if new:
             raise UIError(f"Fakturama showed a dialog when closing the saved {what} editor: "

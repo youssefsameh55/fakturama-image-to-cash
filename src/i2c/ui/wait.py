@@ -5,6 +5,7 @@ import logging
 import time
 from typing import Callable, TypeVar
 
+from i2c import perf
 from i2c.errors import UITimeout
 
 T = TypeVar("T")
@@ -31,7 +32,8 @@ def wait_until(condition: Callable[[], T], timeout: float, interval: float = DEF
             last_exc = exc
         if time.monotonic() >= deadline:
             raise UITimeout(f"timed out after {timeout:.1f}s waiting for {desc}", last_exc)
-        time.sleep(interval)  # polling interval inside a bounded wait, not a blind sleep
+        with perf.timed("wait_idle"):   # time spent waiting for Fakturama (per-step cost)
+            time.sleep(interval)  # polling interval inside a bounded wait, not a blind sleep
 
 
 def wait_stable(read: Callable[[], T], timeout: float, interval: float = DEFAULT_INTERVAL,
@@ -57,7 +59,8 @@ def wait_stable(read: Callable[[], T], timeout: float, interval: float = DEFAULT
             previous = _MISSING
         if time.monotonic() >= deadline:
             raise UITimeout(f"timed out after {timeout:.1f}s waiting for {desc}", last_exc)
-        time.sleep(interval)
+        with perf.timed("wait_idle"):
+            time.sleep(interval)
 
 
 _MISSING = object()
