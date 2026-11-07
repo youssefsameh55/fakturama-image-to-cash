@@ -28,6 +28,7 @@ def build_parser() -> argparse.ArgumentParser:
     ex.add_argument("--no-cache", action="store_true", help="ignore the extraction cache")
 
     sub.add_parser("probe", help="UIA probe (alias for tools/dump_tree.py)", add_help=False)
+    sub.add_parser("gui", help="launcher window: pick an image and start the full run")
 
     run = sub.add_parser("run", help="full flow against a running Fakturama")
     run.add_argument("image", nargs="?", default="samples/order_01.png")
@@ -238,4 +239,7 @@ def main(argv: list[str] | None = None) -> int:
         return cmd_extract(args)
     if args.cmd == "run":
         return cmd_run(args)
+    if args.cmd == "gui":
+        from i2c.gui import main as gui_main
+        return gui_main()
     return EXIT_USAGE
