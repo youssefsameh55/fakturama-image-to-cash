@@ -88,6 +88,7 @@ labels:                                # confirmed against UIA probe dumps (arti
     total_net: "Total Net"                 # first totals Edit in Net mode (Total Gross in Gross mode)
     discount: "Discount"
     number_label: "No."
+    saved_tab_regex: 'PO\d+'             # a saved order's editor tab is named by its number (seen live)
     vat_total: "VAT"                       # Edit "VAT" (totals block)
     total: "Total"
     shipping: "Shipping"

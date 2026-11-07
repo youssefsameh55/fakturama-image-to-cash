@@ -136,21 +136,29 @@ def save_invoice(ctx: RunContext) -> str:
     except Exception:  # noqa: BLE001
         name = invoice_tab(ctx).lstrip("*")
     ctx.results["invoice_tab"] = name
-    return f"invoice {ctx.results.get('invoice_no')} saved (tab {name!r})"
+    ed = _editor(ctx)                                  # exact re-read of the persisted invoice (UIA)
+    ref = get_value(ed.by_label(_L(ctx, "order_editor.cust_ref"), ["Edit"]).wrapper()).strip()
+    paid = get_checked(ed.one("CheckBox", _L(ctx, "invoice_editor.paid")).wrapper())
+    want_paid = ctx.order.payment.status is PaymentStatus.PAID
+    if ref != ctx.order.external_reference or paid != want_paid:
+        raise UIError(f"saved invoice shows Cust.Ref. {ref!r}, paid={paid}; expected "
+                      f"{ctx.order.external_reference!r}, paid={want_paid}")
+    return f"invoice {ctx.results.get('invoice_no')} saved (tab {name!r}); Cust.Ref. and paid re-read exactly"
 
 
 def verify_documents(ctx: RunContext) -> str:
     o = ctx.order
     inv_no, order_no = ctx.results.get("invoice_no"), ctx.results.get("order_no")
     inv = find_document(ctx, inv_no)
-    problems = check_document(inv, None, o.external_reference, o.totals.gross)   # invoice date = today
+    warnings = ctx.results.setdefault("warnings", [])
+    problems = check_document(inv, None, o.external_reference, o.totals.gross, warnings)  # invoice date = today
     state = norm(inv.get("State"))
     if o.payment.status is PaymentStatus.PAID and ("unpaid" in state or "paid" not in state):
         problems.append(f"State {inv.get('State')!r} (expected paid)")
     if problems:
         raise UIError(f"invoice {inv_no} in Documents differs: {problems} (row {inv})")
     order = find_document(ctx, order_no)
-    order_problems = check_document(order, o.order_date, o.external_reference, o.totals.gross)
+    order_problems = check_document(order, o.order_date, o.external_reference, o.totals.gross, warnings)
     if order_problems:
         raise UIError(f"order {order_no} changed in Documents: {order_problems} (row {order})")
     ctx.results["invoice_document"], ctx.results["order_document"] = inv, order

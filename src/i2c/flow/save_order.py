@@ -69,7 +69,27 @@ def verify_lines(ctx: RunContext, ed: Snapshot) -> list[dict]:
 
 # ------------------------------------------------------------------ steps
 
+def _resume_saved_order(ctx: RunContext) -> None:
+    """--start-at save_order after the order was already saved: no 'New Order' tab, but exactly
+    one saved order tab (named like 'PO000003') -> continue with that one."""
+    import re
+
+    if ctx.results.get("order_tab"):
+        return
+    names = [n.name.lstrip("*") for n in ctx.snapshot().find("TabItem")]
+    if _L(ctx, "order_editor.tab") in names:
+        return
+    rx = re.compile(_L(ctx, "order_editor.saved_tab_regex"))
+    saved = [n for n in names if rx.fullmatch(n)]
+    if len(saved) != 1:
+        raise ManualReviewRequired(f"no 'New Order' tab and {len(saved)} saved order tabs open {saved}; "
+                                   "open exactly the order to continue with", ctx.current_step)
+    ctx.results["order_tab"] = ctx.results["order_no"] = saved[0]
+    ctx.results.setdefault("warnings", []).append(f"resumed with already saved order {saved[0]}")
+
+
 def check_order(ctx: RunContext) -> str:
+    _resume_saved_order(ctx)
     ed = activate_editor(ctx, order_tab(ctx))
     verify_order_addresses(ctx)
     ed = ctx.editor(order_tab(ctx))
@@ -93,6 +113,13 @@ def save_order(ctx: RunContext) -> str:
     snap = ctx.snapshot()
     before = {n.name for n in snap.find("TabItem")}
     activate_editor(ctx, order_tab(ctx))
+    if ctx.results.get("order_tab") and not snap.one("Button", _L(ctx, "toolbar.save")).enabled:
+        name = ctx.results["order_tab"]           # resumed: already saved, nothing to save (rule 4)
+        ed = activate_editor(ctx, name)
+        ref = get_value(ed.by_label(_L(ctx, "order_editor.cust_ref"), ["Edit"]).wrapper()).strip()
+        if ref != ctx.order.external_reference:
+            raise UIError(f"saved order {name} shows Cust.Ref. {ref!r}")
+        return f"order {name} was already saved; Cust.Ref. {ref} re-read exactly"
     if not ctx.results.get("order_no"):        # started mid-way (--start-at): read it from the editor
         ctx.results["order_no"] = get_value(ctx.editor(order_tab(ctx)).by_label(
             _L(ctx, "order_editor.number"), ["Edit"]).wrapper()).strip()
@@ -112,7 +139,13 @@ def save_order(ctx: RunContext) -> str:
     number = get_value(ed.by_label(_L(ctx, "order_editor.number"), ["Edit"]).wrapper()).strip()
     if number != ctx.results.get("order_no"):
         raise UIError(f"after saving, the editor shows order {number!r}, expected {ctx.results.get('order_no')!r}")
-    return f"order {number} saved (tab {name!r})"
+    # exact re-read of the persisted header via UIA (no OCR)
+    ref = get_value(ed.by_label(_L(ctx, "order_editor.cust_ref"), ["Edit"]).wrapper()).strip()
+    when = parse_display_date(get_value(ed.by_label(_L(ctx, "order_editor.date"), ["Edit"]).wrapper()))
+    if ref != ctx.order.external_reference or when != ctx.order.order_date:
+        raise UIError(f"saved order shows Cust.Ref. {ref!r} / Date {when}, expected "
+                      f"{ctx.order.external_reference!r} / {ctx.order.order_date}")
+    return f"order {number} saved (tab {name!r}); Cust.Ref. {ref} and Date {when} re-read exactly"
 
 
 def find_document(ctx: RunContext, number: str) -> dict:
@@ -152,15 +185,21 @@ def money_matches(cell: str | None, want: Decimal) -> bool:
     return got is not None and close(got, want)
 
 
-def check_document(row: dict, date, cust_ref: str | None, total: Decimal | None) -> list[str]:  # noqa: ANN001
+def check_document(row: dict, date, cust_ref: str | None, total: Decimal | None,  # noqa: ANN001
+                   warnings: list[str] | None = None) -> list[str]:
+    """Problems (hard) for Date and Total. Cust.Ref. is a hyphen-heavy code OCR mangles
+    ('WEB-2026 -07144...', seen live) and is verified EXACTLY via UIA in the saved editor,
+    so here a mismatch only adds a warning."""
     problems = []
     shown = parse_display_date(row.get("Date", ""))
     if shown is not None and date is not None and shown != date:
         problems.append(f"Date {row.get('Date')!r}")
-    if cust_ref and not cell_matches(row.get("Cust.Ref."), cust_ref):
-        problems.append(f"Cust.Ref. {row.get('Cust.Ref.')!r}")
     if total is not None and not money_matches(row.get("Total"), total):
         problems.append(f"Total {row.get('Total')!r}")
+    if cust_ref and not (cell_matches(row.get("Cust.Ref."), cust_ref) or code_matches(row.get("Cust.Ref."), cust_ref)):
+        msg = f"Documents list Cust.Ref. OCR'd as {row.get('Cust.Ref.')!r} (exact value checked in the editor)"
+        if warnings is not None:
+            warnings.append(msg)
     return problems
 
 
@@ -168,10 +207,12 @@ def verify_order_document(ctx: RunContext) -> str:
     number = ctx.results.get("order_no")
     row = find_document(ctx, number)
     ctx.results["order_document"] = row
-    problems = check_document(row, ctx.order.order_date, ctx.order.external_reference, ctx.order.totals.gross)
+    warnings = ctx.results.setdefault("warnings", [])
+    problems = check_document(row, ctx.order.order_date, ctx.order.external_reference, ctx.order.totals.gross,
+                              warnings)
     if problems:
         raise UIError(f"order {number} in Documents differs: {problems} (row {row})")
-    return f"Documents: {row}"
+    return f"Documents: {row.get('Document')} {row.get('Date')} {row.get('State')} {row.get('Total')}"
 
 
 def create_invoice(ctx: RunContext) -> str:

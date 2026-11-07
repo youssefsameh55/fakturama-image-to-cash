@@ -33,5 +33,7 @@ def test_check_document():
     row = {"Document": "PO000001", "Date": "Jul 14, 2026", "Cust.Ref.": "WEB-2026-0714-A17",
            "State": "open", "Total": "$678.30"}
     assert check_document(row, date(2026, 7, 14), "WEB-2026-0714-A17", Decimal("678.30")) == []
-    bad = dict(row, Total="$583.10", **{"Cust.Ref.": "X"})
-    assert len(check_document(bad, date(2026, 7, 14), "WEB-2026-0714-A17", Decimal("678.30"))) == 2
+    bad = dict(row, Total="$583.10", **{"Cust.Ref.": "WEB-2026 -07144..."})   # Cust.Ref. as OCR'd live
+    warnings = []
+    assert check_document(bad, date(2026, 7, 14), "WEB-2026-0714-A17", Decimal("678.30"), warnings) == ["Total '$583.10'"]
+    assert len(warnings) == 1
