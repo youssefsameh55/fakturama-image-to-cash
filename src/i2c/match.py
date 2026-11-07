@@ -63,7 +63,12 @@ def code_matches(cell: object, want: object) -> bool:
     if cell_matches(cell, want):
         return True
     canon = lambda v: norm(v).upper().replace(" ", "").translate(_LOOKALIKES)  # noqa: E731
-    return bool(norm(cell)) and canon(cell) == canon(want)
+    if not norm(cell):
+        return False
+    if canon(cell) == canon(want):
+        return True
+    visible = _TRAILING_JUNK.sub("", norm(cell)).rstrip()     # truncated AND OCR'd: 'POOO...'
+    return visible != norm(cell) and len(visible) >= MIN_VISIBLE_PREFIX and canon(want).startswith(canon(visible))
 
 
 def _eq(a: object, b: object) -> bool:

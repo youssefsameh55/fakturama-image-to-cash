@@ -116,24 +116,40 @@ def save_order(ctx: RunContext) -> str:
 
 
 def find_document(ctx: RunContext, number: str) -> dict:
-    """Data > Documents: type `number` into the view's search once, then poll the OCR'd list
-    until exactly one row has that document number."""
-    from i2c.flow.common import read_rect
+    """Data > Documents: type `number` into the view's search once, maximize the view (full-width
+    columns), then poll the OCR'd list until exactly one row has that document number."""
+    from i2c.flow.common import maximized_view, read_rect
 
-    view = open_view(ctx, "documents", _L(ctx, "views.documents"))
+    view_name = _L(ctx, "views.documents")
+    view = open_view(ctx, "documents", view_name)
     box = view.by_label(_L(ctx, "dialogs.search"), ["Edit"])
     set_text(box.wrapper(), number, methods=("keys",))
-    rect = view.table_rect()
-    ctx.targets.append(rect)
+    with maximized_view(ctx, view_name) as big:
+        rect = big.table_rect()
+        ctx.targets.append(rect)
 
-    def row() -> dict | None:
-        rows = read_rect(ctx, rect, "documents").as_dicts()
-        hits = [r for r in rows if code_matches(r.get("Document"), number)]
-        if len(hits) > 1:
-            raise UIError(f"{len(hits)} documents numbered {number!r}: {rows}")
-        return hits[0] if hits else None
+        def row() -> dict | None:
+            rows = read_rect(ctx, rect, "documents").as_dicts()
+            hits = [r for r in rows if code_matches(r.get("Document"), number)]
+            if len(hits) > 1:
+                raise UIError(f"{len(hits)} documents numbered {number!r}: {rows}")
+            return hits[0] if hits else None
 
-    return wait_until(row, ctx.timeout(), ctx.interval, desc=f"document {number} in Data > Documents")
+        found = wait_until(row, ctx.timeout(), ctx.interval, desc=f"document {number} in Data > Documents")
+        ctx.evidence.shot(f"{ctx.current_step}_documents", f"Documents (maximized): {found}", [rect])
+        return found
+
+
+def money_matches(cell: str | None, want: Decimal) -> bool:
+    """Exact amount; a still-truncated cell ('$678...') must at least be a prefix of the amount."""
+    import re
+
+    text = (cell or "").strip()
+    if re.search(r"(\.\.\.|…)\s*$", text):
+        visible = re.sub(r"[^\d.]", "", text.rstrip(".… "))
+        return len(visible) >= 2 and f"{want:.2f}".startswith(visible)
+    got = parse_decimal(text)
+    return got is not None and close(got, want)
 
 
 def check_document(row: dict, date, cust_ref: str | None, total: Decimal | None) -> list[str]:  # noqa: ANN001
@@ -143,8 +159,7 @@ def check_document(row: dict, date, cust_ref: str | None, total: Decimal | None)
         problems.append(f"Date {row.get('Date')!r}")
     if cust_ref and not cell_matches(row.get("Cust.Ref."), cust_ref):
         problems.append(f"Cust.Ref. {row.get('Cust.Ref.')!r}")
-    got = parse_decimal(row.get("Total"))
-    if total is not None and (got is None or not close(got, total)):
+    if total is not None and not money_matches(row.get("Total"), total):
         problems.append(f"Total {row.get('Total')!r}")
     return problems
 

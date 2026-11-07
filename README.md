@@ -151,6 +151,10 @@ See `PLAN.md` §9 (G1–G6). Additional implementation decisions:
   already known table rectangle (about 0.1–0.2 s) instead of a full UIA walk of the window (about
   1.5 s). The final verification still uses a stable double read.
 - **The unit ("pcs") is extracted but not entered.** Fakturama's item line has no unit field.
+- **Data › Documents is maximized while it's read.** In a narrow layout every cell was truncated
+  ("POOO...", "WEB...", "$678..."). The view's own Maximize button (inside its tab folder in
+  UIA) gives full-width columns, so Cust.Ref. and Total are checked exactly; the view is always
+  restored afterwards. Item numbers match even when a cell is both truncated and misread by OCR.
 - **Fakturama save errors are detected, and one was traced to Fakturama itself.** If a dialog
   appears after Save, the run stops and reports its text instead of waiting. In one live session
   the order editor failed to save with `NullPointerException ... DocumentEditor.doSave

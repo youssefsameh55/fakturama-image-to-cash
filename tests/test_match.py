@@ -95,3 +95,18 @@ def test_sku_ocr_lookalikes():
     assert match_product(rows, "CHR-ERG-01", "Ergonomic Desk Chair").outcome is Outcome.EXACT
     two = rows + [{"Item No.": "CHR-ERG-01", "Name": "Other"}]
     assert match_product(two, "CHR-ERG-01").outcome is Outcome.AMBIGUOUS
+
+
+def test_code_truncated_and_lookalikes():
+    from i2c.match import code_matches
+    assert code_matches("POOO...", "PO000001")          # seen live in a narrow Documents view
+    assert not code_matches("PO1...", "PO000001")
+
+
+def test_money_matches():
+    from decimal import Decimal
+    from i2c.flow.save_order import money_matches
+    assert money_matches("$678.30", Decimal("678.30"))
+    assert money_matches("$678...", Decimal("678.30"))
+    assert not money_matches("$583.10", Decimal("678.30"))
+    assert not money_matches("$58...", Decimal("678.30"))

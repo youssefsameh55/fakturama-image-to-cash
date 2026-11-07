@@ -2,6 +2,7 @@
 from __future__ import annotations
 
 import logging
+from contextlib import contextmanager
 from typing import Callable
 
 from i2c.errors import SelectorClosed, UIError
@@ -152,6 +153,37 @@ def open_view(ctx: RunContext, left_panel_key: str, view_name: str) -> Snapshot:
                    ctx.interval, desc=f"view {view_name!r}")
     full = ctx.snapshot()
     return full.within(full.one("Pane", view_name))
+
+
+@contextmanager
+def maximized_view(ctx: RunContext, view_name: str):  # noqa: ANN201
+    """Maximize a list view (its own 'Maximize' button in the view's tab folder) for full-width
+    columns, and always restore it. Live: in a narrow Documents view every cell was truncated
+    ('POOO...', '$678...'), so exact values could not be checked."""
+    snap = ctx.snapshot()
+    pane = snap.one("Pane", view_name)
+    folder = snap.parent(pane)
+    if folder is None or folder.control_type != "Tab":
+        raise UIError(f"view {view_name!r} has no tab folder")
+    buttons = snap.within(folder).find("Button", name=ctx.label("views.maximize"))
+    maximized = False
+    if buttons:
+        click(buttons[0].wrapper())
+        wait_until(lambda: ctx.snapshot().one("Pane", view_name).rect.height > pane.rect.height + 50,
+                   ctx.timeout(), ctx.interval, desc=f"{view_name!r} maximized")
+        maximized = True
+        park_mouse(ctx)
+    try:
+        full = ctx.snapshot()
+        yield full.within(full.one("Pane", view_name))
+    finally:
+        if maximized:
+            full = ctx.snapshot()
+            f = full.parent(full.one("Pane", view_name))
+            restore = full.within(f).find("Button", name=ctx.label("views.restore")) if f else []
+            if restore:
+                click(restore[0].wrapper())
+                park_mouse(ctx)
 
 
 def read_rect(ctx: RunContext, rect: Rect, kind: str, equal_reads: int = 2) -> Table:

@@ -69,6 +69,8 @@ labels:                                # confirmed against UIA probe dumps (arti
     terms_of_payment: "terms of payment"
     new_payment_button: "Create a new term of payment"   # green + in the terms of payment view
     new_vat_button: "Create a new tax rate"
+    maximize: "Maximize"                   # view folder's own button (not the window's)
+    restore: "Restore"
   order_editor:
     tab: "New Order"
     number: "No."
