@@ -42,7 +42,7 @@ class RunContext:
 
     @property
     def text_methods(self) -> tuple[str, ...]:
-        return tuple(self.settings.get("input.text_methods", ["value", "keys"]))
+        return tuple(self.settings.get("input.text_methods", ["keys", "value"]))
 
     @property
     def date_pattern(self) -> str:

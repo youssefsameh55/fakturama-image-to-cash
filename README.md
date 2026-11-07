@@ -95,9 +95,12 @@ See `PLAN.md` §9 (G1–G6). Additional implementation decisions:
   back. The date is checked again after focus leaves the field.
 - **Clicks use the real mouse at the centre of the control's UIA rectangle.** UIA `Invoke` on an
   SWT button that opens a modal dialog can block until the dialog closes.
-- **Text input tries UIA ValuePattern first, then the keyboard, and every value is read back.**
-  The order is configurable (`input.text_methods`), because SWT data binding may only commit
-  values entered with real key input.
+- **Text input uses real keystrokes first, then UIA ValuePattern, and every value is read back.**
+  The plan put ValuePattern first, and the live runs changed that. A Debtor's Company set through
+  ValuePattern showed in the editor and read back correctly, but was saved **empty**: the widget
+  changed, Fakturama's data didn't. So read-back alone isn't proof. After saving, records are
+  read back from Fakturama's own lists (Debtors, terms of payment). The order of methods is
+  configurable (`input.text_methods`).
 - **The fresh Fakturama database has only VAT "Tax-free 0%" and payment term "Cash".** So creating
   the VAT rate and the payment method is required for the sample order, not an optional extra.
 - **The payment method is created before the Debtor, not halfway through it.** The plan creates

@@ -18,7 +18,8 @@ ocr:
   row_merge_tolerance_px: 8      # words whose centre-y differ by less than this are one row
 
 input:
-  text_methods: [value, keys]    # order of attempts for text fields; each is verified by read-back
+  text_methods: [keys, value]    # live: UIA SetValue changed the Debtor's Company box on screen but not in
+                                 # Fakturama's data (saved empty) -> real keystrokes first; all read back
   date_pattern: "{mon} {day}, {year}"   # probe: Fakturama shows 'Nov 7, 2026'
   date_method: arrows            # arrows | text. Live: text set via UIA reverted to today -> arrow keys per field
 
@@ -28,6 +29,7 @@ tables:                          # canonical column headers (OCR text is fuzzy-m
   items: ["Pos.", "Qty.", "Item No.", "Picture", "Name", "Description", "VAT", "U.Price", "Discount", "Price"]
   documents: ["Document", "Date", "Name", "Cust.Ref.", "State", "Total", "Printed"]
   vats: ["Standard", "Name", "Description", "Value"]
+  debtors: ["No.", "First Name", "Name", "Company", "ZIP", "City"]
   payments: ["Standard", "Name", "Description", "Discount", "Disc. Days", "Net Days"]
 
 extraction:                      # PROMPT_VERSION lives in src/i2c/extract/prompt.py (it versions code)
@@ -59,7 +61,9 @@ labels:                                # confirmed against UIA probe dumps (arti
     documents: "Documents"
     vats: "VATs"
     terms_of_payment: "terms of payment"
+    debtors: "Debtors"
   views:                               # list views open as panes with these names
+    debtors: "Debtors"
     documents: "Documents"
     vats: "VATs"
     terms_of_payment: "terms of payment"

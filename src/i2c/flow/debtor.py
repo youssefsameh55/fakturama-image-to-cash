@@ -176,9 +176,25 @@ def create_debtor(ctx: RunContext) -> str:
     ctx.targets = [pay.rect]
 
     save_once(ctx, f"debtor {d.company!r}")
+    _verify_saved_debtor(ctx)
     ctx.results["entities"]["debtor"] = "created"
     return (f"debtor {d.company!r} created (Customer ID {ctx.results['customer_id']} kept), "
             f"{'1 address' if same else 'invoice + delivery address'}, payment {ctx.order.payment.method!r}")
+
+
+def _verify_saved_debtor(ctx: RunContext) -> None:
+    """Read the saved debtor back from Data > Debtors: proves Fakturama stored the values, not
+    just the widgets (live: a Company shown in the editor was saved empty). The list's ZIP/City
+    show one of the debtor's addresses (seen: the delivery one), so only names are compared."""
+    d = ctx.order.debtor
+    view = open_view(ctx, "debtors", _L(ctx, "views.debtors"))
+    rows = read_view_table(ctx, view, "debtors").as_dicts()
+    hits = [r for r in rows if all(norm(r.get(k)) == norm(v) for k, v in
+                                   (("Company", d.company), ("First Name", d.first_name), ("Name", d.last_name)))]
+    if len(hits) != 1:
+        raise UIError(f"saved debtor not found exactly once in the Debtors list by company + name "
+                      f"(found {len(hits)}): {rows}")
+    ctx.targets.append(view.table_rect())
 
 
 def _active_address_tab(ed: Snapshot) -> str | None:
