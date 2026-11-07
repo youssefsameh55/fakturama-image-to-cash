@@ -121,3 +121,17 @@ def test_find_phrase_tab_labels():
     assert find_phrase(words, "additional address #1") == Rect(813, 712, 1036, 732)
     assert find_phrase([w("*New", 10, 5, 40), w("Debtor", 60, 5, 60)], "New Debtor") is not None
     assert find_phrase(words, "Miscellaneous") is None
+
+
+def test_looks_selected_and_cell_point():
+    from i2c.ui.table import looks_selected
+    white = Image.new("RGB", (400, 30), "white")
+    ImageDraw.Draw(white).text((5, 8), "CUST000005 Marta Klein", fill="black")
+    blue = Image.new("RGB", (400, 30), (0, 120, 215))
+    assert not looks_selected(white) and looks_selected(blue)
+
+    words = [w("No.", 1010, 510), w("Company", 1210, 510),
+             w("1", 1002, 550, 8), w("CUST000005", 1030, 550, 100), w("ACME", 1210, 550)]
+    t = build_table(words, TABLE, lines=[1020, 1200])
+    assert t.cell_point(t.rows[0], "No.") == w("CUST000005", 1030, 550, 100).rect.center
+    assert t.cell_point(t.rows[0], "Missing") is None

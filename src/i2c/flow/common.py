@@ -154,9 +154,23 @@ def search_selector(ctx: RunContext, dialog_title: str, text: str, kind: str) ->
     return table, snap
 
 
-def pick_row_and_ok(ctx: RunContext, dialog_title: str, table: Table, index: int) -> None:
+def pick_row_and_ok(ctx: RunContext, dialog_title: str, table: Table, index: int,
+                    click_column: str = "No.") -> None:
+    """Select a row by clicking a data cell (from its OCR word box), verify the row is
+    highlighted, then OK. Live: clicking the row-number cell left nothing selected, and OK
+    then closed the dialog without filling the order."""
+    from i2c.ui.ocr import capture
+    from i2c.ui.table import looks_selected
+
     row = table.rows[index]
-    click_point(*row.click_point())
+    point = table.cell_point(row, click_column) or row.click_point()
+    ctx.targets.append(row.rect)
+    click_point(*point)
+    band = Rect(row.rect.left, row.rect.top - 4, row.rect.right, row.rect.bottom + 4)
+    try:
+        wait_until(lambda: looks_selected(capture(band)), 3.0, ctx.interval, desc="row highlight")
+    except Exception as exc:  # noqa: BLE001
+        raise UIError(f"clicked row {index + 1} at {point} but it does not look selected") from exc
     snap = ctx.app.snapshot(ctx.app.wait_dialog(dialog_title))
     click(snap.one("Button", ctx.label("dialogs.ok")).wrapper())
     ctx.app.wait_dialog_closed(dialog_title, ctx.timeout("window"))

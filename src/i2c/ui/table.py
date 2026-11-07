@@ -39,6 +39,15 @@ class Table:
     rows: list[Row]
     raw_headers: list[str] = field(default_factory=list)
 
+    def cell_point(self, row: Row, column: str) -> tuple[int, int] | None:
+        """Centre of the OCR words that make up `column`'s cell in `row` (a data cell, not the
+        row-number header - clicking that did not select the row, seen live)."""
+        if column not in self.headers:
+            return None
+        a, b = self.columns[self.headers.index(column)]
+        words = [w for w in row.words if a <= w.rect.cx < b]
+        return _bounding(words).center if words else None
+
     def signature(self) -> tuple:
         """Comparable content, used to detect when the table stopped changing."""
         return tuple(tuple(sorted(r.cells.items())) for r in self.rows)
@@ -263,6 +272,15 @@ def find_phrase(words: list[Word], phrase: str, min_ratio: float = 0.85) -> Rect
 INK_THRESHOLD = 140          # grayscale below this = text pixel; grid lines (~180-220) are not ink
 CONTEXT_GAP = 20             # px between header and cell in the composite (measured: 20 works, 40 doesn't)
 CONTEXT_SCALE = 2.0
+
+
+def looks_selected(img: Image.Image, min_fraction: float = 0.5) -> bool:
+    """A selected NatTable row has a coloured background; an unselected one is white with dark
+    text (text covers well under half of the row's pixels)."""
+    g = img.convert("L")
+    hist = g.histogram()
+    dark = sum(hist[:230])
+    return dark >= min_fraction * (g.width * g.height)
 
 
 def ink_bbox(img: Image.Image) -> tuple[int, int, int, int] | None:

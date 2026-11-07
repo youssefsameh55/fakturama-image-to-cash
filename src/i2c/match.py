@@ -5,6 +5,7 @@ Rows are plain dicts (column header -> cell text) as read from Fakturama's table
 """
 from __future__ import annotations
 
+import re
 import unicodedata
 from dataclasses import dataclass, field
 from enum import Enum
@@ -32,8 +33,10 @@ def norm(value: object) -> str:
     return " ".join(text.split()).casefold()
 
 
-TRUNCATION_MARKS = ("...", "…")
 MIN_VISIBLE_PREFIX = 4
+# Trailing run of punctuation/space that contains at least one dot-like mark. Fakturama's '...'
+# truncation is OCR'd in many ways ('...', '…', ' . „' - all seen live).
+_TRAILING_JUNK = re.compile(r"[\s.,:;…„‚'\"`·_-]*[.…„‚,][\s.,:;…„‚'\"`·_-]*$")
 
 
 def cell_matches(cell: object, want: object) -> bool:
@@ -43,11 +46,10 @@ def cell_matches(cell: object, want: object) -> bool:
     c, w = norm(cell), norm(want)
     if c == w:
         return True
-    for mark in TRUNCATION_MARKS:
-        if c.endswith(mark):
-            visible = c[: -len(mark)].rstrip()
-            return len(visible) >= MIN_VISIBLE_PREFIX and w.startswith(visible)
-    return False
+    visible = _TRAILING_JUNK.sub("", c).rstrip()
+    if visible == c:          # nothing looked like a truncation mark
+        return False
+    return len(visible) >= MIN_VISIBLE_PREFIX and w.startswith(visible)
 
 
 def _eq(a: object, b: object) -> bool:

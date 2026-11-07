@@ -63,3 +63,11 @@ def test_truncated_cells():
     assert r.outcome is Outcome.EXACT
     two = match_debtor([row(company="Northstar Offic..."), row(company="Northstar Office GmbH")], DEBTOR)
     assert two.outcome is Outcome.AMBIGUOUS
+
+
+def test_truncation_junk_from_ocr():
+    from i2c.match import cell_matches
+    assert cell_matches("Northstar Office . „", "Northstar Office GmbH")   # seen live
+    assert cell_matches("Northstar Office GmbH.", "Northstar Office GmbH")
+    assert not cell_matches("Northstar Office", "Northstar Office GmbH")   # no truncation mark
+    assert not cell_matches("Acme . „", "Northstar Office GmbH")

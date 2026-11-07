@@ -293,7 +293,11 @@ def select_created_debtor(ctx: RunContext) -> str:
 def verify_order_addresses(ctx: RunContext) -> str:
     d = ctx.order.debtor
     ed = activate_editor(ctx, _L(ctx, "order_editor.tab"))
-    text = _address_box_text(ctx, ed, _L(ctx, "order_editor.invoice_address_tab"))
+    invoice_tab = _L(ctx, "order_editor.invoice_address_tab")
+    # The box is filled asynchronously after the dialog closes: wait for text, not just once.
+    text = wait_until(lambda: _address_box_text(ctx, ctx.editor(_L(ctx, "order_editor.tab")), invoice_tab).strip(),
+                      ctx.timeout(), ctx.interval, desc="order invoice address to be filled")
+    ed = ctx.editor(_L(ctx, "order_editor.tab"))
     _expect_address(text, d.billing_address, d.company, "invoice")
     checked = ["invoice"]
     if not d.delivery_same_as_billing:
