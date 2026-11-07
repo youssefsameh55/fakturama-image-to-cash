@@ -12,8 +12,8 @@ from __future__ import annotations
 import logging
 
 from i2c.errors import ManualReviewRequired, UIError
-from i2c.flow.common import (activate_editor, activate_subtab, cancel_dialog, open_selector, open_view,
-                             pick_row_and_ok, read_view_table, save_once, search_selector)
+from i2c.flow.common import (activate_editor, activate_subtab, cancel_dialog, close_saved_editor, open_selector,
+                             open_view, pick_row_and_ok, read_view_table, save_once, search_selector)
 from i2c.flow.context import RunContext
 from i2c.flow.runner import Step
 from i2c.match import Outcome, cell_matches, match_by_name, match_debtor, norm
@@ -95,7 +95,8 @@ def ensure_payment_method(ctx: RunContext) -> str:
     wait_until(lambda: ctx.app.find_first("Pane", editor) is not None, ctx.timeout("window"), ctx.interval,
                desc="New Term of Payment editor")
     ed = ctx.editor(editor)
-    set_text(ed.by_label(_L(ctx, "payment_editor.name"), ["Edit"]).wrapper(), method, methods=ctx.text_methods)
+    name_box = ed.by_label(_L(ctx, "payment_editor.name"), ["Edit"]).wrapper()
+    set_text(name_box, method, methods=ctx.text_methods)
     set_text(ed.by_label(_L(ctx, "payment_editor.description"), ["Edit"]).wrapper(), method,
              methods=ctx.text_methods)
     code_combo = ed.one("ComboBox", _L(ctx, "payment_editor.code"))
@@ -107,6 +108,7 @@ def ensure_payment_method(ctx: RunContext) -> str:
     })
     ctx.targets = [code_combo.rect]
     save_once(ctx, f"payment method {method!r}")   # 'Set as standard' deliberately not touched
+    close_saved_editor(ctx, name_box, "payment method")   # saved + verified; the list check follows
 
     table = read_view_table(ctx, open_view(ctx, "terms_of_payment", view_name), "payments")
     check = match_by_name(table.as_dicts(), method, {"Description": method})
@@ -176,6 +178,7 @@ def create_debtor(ctx: RunContext) -> str:
     ctx.targets = [pay.rect]
 
     save_once(ctx, f"debtor {d.company!r}")
+    close_saved_editor(ctx, misc.one("Edit", _L(ctx, "debtor_editor.alias")).wrapper(), "debtor")
     _verify_saved_debtor(ctx)
     ctx.results["entities"]["debtor"] = "created"
     return (f"debtor {d.company!r} created (Customer ID {ctx.results['customer_id']} kept), "

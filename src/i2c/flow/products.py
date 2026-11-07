@@ -18,8 +18,8 @@ from decimal import Decimal
 
 from i2c.calc import line_net, parse_decimal, product_gross_price
 from i2c.errors import ManualReviewRequired, SelectorClosed, UIError
-from i2c.flow.common import (activate_editor, cancel_dialog, open_selector, open_view, park_mouse,
-                             pick_row_and_ok, read_rect, read_view_table, save_once, search_selector)
+from i2c.flow.common import (activate_editor, cancel_dialog, close_saved_editor, open_selector, open_view,
+                             park_mouse, pick_row_and_ok, read_rect, read_view_table, save_once, search_selector)
 from i2c.flow.context import RunContext
 from i2c.flow.runner import Step
 from i2c.match import Outcome, code_matches, match_by_name, match_product
@@ -97,6 +97,7 @@ def _ensure_vat(ctx: RunContext, p: Decimal) -> str:
              normalize=lambda s: str(parse_decimal(s)))
     ctx.targets = [code.rect, value.rect]
     save_once(ctx, f"VAT {name!r}")   # 'Set as standard' deliberately untouched
+    close_saved_editor(ctx, value.wrapper(), "VAT")   # saved; the VATs-list check follows
 
     rows = _vat_rows(ctx)
     check = match_by_name(rows, name)
@@ -257,7 +258,8 @@ def _create_product(ctx: RunContext, item: Item) -> None:
     m = ctx.text_methods
     gross = product_gross_price(item.unit_net_price, item.vat_percent)
     money = lambda s: str(parse_decimal(s))  # noqa: E731 - '$297.50' vs '297.50'
-    set_text(ed.by_label(_L(ctx, "product_editor.item_number"), ["Edit"]).wrapper(), item.sku, methods=m)
+    sku_box = ed.by_label(_L(ctx, "product_editor.item_number"), ["Edit"]).wrapper()
+    set_text(sku_box, item.sku, methods=m)
     set_text(ed.by_label(_L(ctx, "product_editor.name"), ["Edit"]).wrapper(), item.description or "", methods=m)
     set_text(ed.by_label(_L(ctx, "product_editor.description"), ["Edit"]).wrapper(), item.description or "",
              methods=m)
@@ -273,6 +275,7 @@ def _create_product(ctx: RunContext, item: Item) -> None:
         set_text(stock.wrapper(), "0.00", methods=m, normalize=money)
     ctx.targets = [vat_combo.rect]
     save_once(ctx, f"product {item.sku!r} (gross {gross})")
+    close_saved_editor(ctx, sku_box, f"product {item.sku!r}")   # the selector search after it verifies
 
 
 # ------------------------------------------------------------------ line values

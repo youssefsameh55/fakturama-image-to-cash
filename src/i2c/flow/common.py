@@ -72,6 +72,51 @@ def save_once(ctx: RunContext, what: str) -> None:
     log.info("saved %s", what)
 
 
+def _gone(element) -> bool:  # noqa: ANN001 - raw IUIAutomationElement
+    """True once a control is no longer shown (its editor was closed: element disposed/offscreen)."""
+    try:
+        return bool(element.CurrentIsOffscreen) or element.CurrentBoundingRectangle.right <= 0
+    except Exception:  # noqa: BLE001 - UIA_E_ELEMENTNOTAVAILABLE: disposed
+        return True
+
+
+def close_saved_editor(ctx: RunContext, anchor, what: str) -> bool:  # noqa: ANN001 - pywinauto wrapper
+    """Close a master-data editor (payment method, VAT, product, Debtor) AFTER its save was verified.
+
+    Why: every editor left open makes each later UIA read slower (live: ~100 ms per FindFirst with
+    nothing created, ~260 ms after 5 editors were left open; a create-everything run took 188 s).
+    Safe by construction: only when Save is disabled (nothing unsaved), keys only with proven focus
+    on a control inside that editor (`anchor`), closed = that control is gone. A dialog after the
+    key (e.g. 'Save changes?') is never answered: the run stops with its text. If no close key
+    works, the editor just stays open (a warning) - closing is cleanup, not a brief requirement."""
+    if save_enabled(ctx):
+        log.warning("not closing the %s editor: it has unsaved changes", what)
+        return False
+    element = anchor.element_info.element
+    dialogs_before = _child_windows(ctx)
+    for keys in ctx.settings.get("input.close_editor_keys", ["^w", "^{F4}"]):
+        if _gone(element):
+            break
+        ensure_focus(anchor)
+        anchor.type_keys(keys, set_foreground=False)
+        try:
+            wait_until(lambda: _gone(element) or bool(_child_windows(ctx) - dialogs_before),
+                       2.0, 0.1, desc=f"{what} editor to close")
+        except Exception:  # noqa: BLE001 - try the next key
+            log.info("%s did not close the %s editor", keys, what)
+        new = _child_windows(ctx) - dialogs_before
+        if new:
+            raise UIError(f"Fakturama showed a dialog when closing the saved {what} editor: "
+                          f"{sorted(new)} {_dialog_texts(ctx, dialogs_before)}")
+    if _gone(element):
+        log.info("closed the saved %s editor", what)
+        return True
+    msg = f"the saved {what} editor could not be closed (left open; later UI reads are slower)"
+    log.warning(msg)
+    ctx.results.setdefault("warnings", []).append(msg)
+    return False
+
+
 def _child_windows(ctx: RunContext) -> set[str]:
     """Titles of dialog windows owned by Fakturama (children of the main window)."""
     main = ctx.app.main

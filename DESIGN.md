@@ -24,7 +24,7 @@ order image ─► LLM extraction (1 call, cached) ─► validation ─► (1 r
 ```
 
 **Result.** End to end `status: ok` in 63.5 s with all master data selected; the create paths
-(Debtor with two addresses, payment method, VAT, products) were verified live as well. 129 offline
+(Debtor with two addresses, payment method, VAT, products) were verified live as well. 135 offline
 tests.
 
 ## 2. Extraction (image → data)
@@ -103,6 +103,8 @@ tolerance can never cause a silent wrong pick.
 - Exact where possible: UIA values (header fields, totals, address boxes) are compared exactly; OCR'd
   table values are compared as `Decimal` with ±0.01.
 - Save is clicked exactly once per record, then verified (Save disables again; any dialog is reported).
+  A saved master-data editor is then closed (only with Save disabled; a dialog stops the run): open
+  editors made every UIA read ~2.5× slower.
 
 | Brief | Step | Verified by |
 |---|---|---|
@@ -136,7 +138,7 @@ stopping step, the entities selected or created, every step's verification, warn
 
 ## 6. Testing
 
-**Offline: 129 automated tests** (`pytest`, no Fakturama needed, run after every change):
+**Offline: 135 automated tests** (`pytest`, no Fakturama needed, run after every change):
 - **Unit tests:** money math (half-up rounding, gross price, mixed VAT rates), parsing into the data
   model, every validation rule (the sample's correct data plus one deliberate error per test), and
   matching (all four outcomes per entity, truncated cells, OCR look-alikes).
@@ -146,7 +148,7 @@ stopping step, the entities selected or created, every step's verification, warn
   Fakturama screens, and table reading runs real Windows OCR on screenshots captured in live runs
   where reading had failed (regression tests for those bugs).
 - **UI helpers and runner with fake controls:** waits, text-entry fallbacks, the focus guard,
-  arrow-key dates, and the runner's exit codes (ok / manual review / error).
+  arrow-key dates, closing saved editors, and the runner's exit codes (ok / manual review / error).
 
 **Live tests against Fakturama** (run by hand; evidence in `artifacts/<run-id>/`):
 - end to end on the sample with all master data existing: `status: ok` in 63.5 s;

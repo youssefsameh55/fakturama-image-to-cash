@@ -27,6 +27,16 @@ def count(name: str) -> None:
     _counts[name] += 1
 
 
+def step_cost(before: dict[str, tuple[int, float]] | None = None) -> dict[str, tuple[int, float]]:
+    """Totals of the UIA and OCR counters; with `before`, the change since then (one step's cost)."""
+    now = {"uia": (sum(c for k, c in _counts.items() if k.startswith("uia_")),
+                   sum(s for k, s in _seconds.items() if k.startswith("uia_"))),
+           "ocr": (_counts.get("ocr_pass", 0), _seconds.get("ocr_pass", 0.0))}
+    if before is None:
+        return now
+    return {k: (now[k][0] - before[k][0], now[k][1] - before[k][1]) for k in now}
+
+
 def report() -> dict[str, dict[str, float]]:
     return {k: {"count": _counts[k], "seconds": round(_seconds[k], 2),
                 "avg_ms": round(1000 * _seconds[k] / _counts[k], 1) if _counts[k] else 0.0}

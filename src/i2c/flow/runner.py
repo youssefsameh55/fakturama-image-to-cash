@@ -14,6 +14,7 @@ from dataclasses import dataclass
 from datetime import datetime
 from typing import Callable
 
+from i2c import perf
 from i2c.errors import ManualReviewRequired
 from i2c.flow.context import RunContext
 
@@ -75,13 +76,14 @@ def _run_step(ctx: RunContext, stage: str, step: Step, summary: dict) -> None:
     ctx.current_step = f"{stage}.{step.name}"
     ctx.targets = []
     t0 = time.monotonic()
+    cost0 = perf.step_cost()
     log.info("--- %s", ctx.current_step)
     record = {"step": ctx.current_step}
     try:
         message = step.fn(ctx)
     except Exception as exc:
         record.update(status="failed", error=f"{type(exc).__name__}: {exc}",
-                      duration_s=round(time.monotonic() - t0, 2))
+                      duration_s=round(time.monotonic() - t0, 2), cost=_cost(cost0))
         shot = ctx.evidence.shot(ctx.current_step, f"{ctx.current_step}: {exc}"[:200], ctx.targets, ok=False)
         record["screenshot"] = shot.name if shot else None
         if isinstance(exc, ManualReviewRequired) and exc.screenshot is None:
@@ -90,6 +92,15 @@ def _run_step(ctx: RunContext, stage: str, step: Step, summary: dict) -> None:
         raise
     shot = ctx.evidence.shot(ctx.current_step, f"{ctx.current_step}: {message}", ctx.targets, ok=True)
     record.update(status="ok", message=message, duration_s=round(time.monotonic() - t0, 2),
-                  screenshot=shot.name if shot else None)
+                  screenshot=shot.name if shot else None, cost=_cost(cost0))
     summary["steps"].append(record)
-    log.info("ok %s: %s", ctx.current_step, message)
+    log.info("ok %s (%.1f s; %s): %s", ctx.current_step, record["duration_s"], _cost_text(record["cost"]), message)
+
+
+def _cost(before: dict) -> dict:
+    """Where a step's time went: UIA calls and OCR passes (count, seconds) - to find slow steps."""
+    return {k: {"count": n, "seconds": round(s, 2)} for k, (n, s) in perf.step_cost(before).items()}
+
+
+def _cost_text(cost: dict) -> str:
+    return ", ".join(f"{k} {v['count']} x = {v['seconds']:.1f} s" for k, v in cost.items())
