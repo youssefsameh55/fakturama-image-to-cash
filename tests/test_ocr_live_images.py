@@ -47,3 +47,15 @@ def test_selected_row_light_header_lines_and_stroke_words():
     (row,) = build_table(words, r, lines, exp).as_dicts()
     assert parse_decimal(row["Qty."]) == 1 and row["U.Price"] == "$250.00" and row["Price"] == "$250.00"
     assert row["Discount"] == "0.00 %" and parse_decimal(row["VAT"]) == 19
+
+
+def test_grey_header_positional_names():
+    from i2c.calc import parse_decimal
+    img = Image.open(FIX / "items_grey_header_live.png")
+    r = Rect(0, 0, img.width, img.height)
+    words = ocr.ocr_image(img)
+    band = header_band(words, 8, table_top=0)
+    lines = detect_vertical_lines(img, *band)
+    exp = ["Pos.", "Qty.", "Item No.", "Picture", "Name", "Description", "VAT", "U.Price", "Discount", "Price"]
+    rows = build_table(words, r, lines, exp).as_dicts()
+    assert [(parse_decimal(x["Qty."]), x["Price"]) for x in rows] == [(2, "$450.00"), (3, "$120.00")]

@@ -123,10 +123,12 @@ def _items_table_rect(ed: Snapshot, ctx: RunContext) -> Rect:
     return _items_table_node(ed, ctx).rect
 
 
-def read_items(ctx: RunContext) -> tuple[Table, Rect]:
+def read_items(ctx: RunContext, stable: bool = False) -> tuple[Table, Rect]:
+    """Items table: one (cached) UIA snapshot for the rect + one OCR pass. `stable=True` adds
+    the double read (D9) - used for final verifications only."""
     ed = activate_editor(ctx, _L(ctx, "order_editor.tab"))
     rect = _items_table_rect(ed, ctx)
-    return read_rect(ctx, rect, "items"), rect
+    return (read_rect(ctx, rect, "items") if stable else _quick_read(ctx, rect)), rect
 
 
 def _quick_read(ctx: RunContext, rect: Rect) -> Table:
@@ -158,7 +160,7 @@ def _add_line(ctx: RunContext, item: Item) -> str:
         raise ManualReviewRequired(f"item {item.position} has no SKU", ctx.current_step)
     order_tab = _L(ctx, "order_editor.tab")
     activate_editor(ctx, order_tab)
-    items, _ = read_items(ctx)
+    items, _ = read_items(ctx, stable=True)      # duplicate guard: a missed line must not cause a re-add
     if _line_for(items, item.sku) is not None:
         # A new order has no lines, so this only happens when a stage is resumed (--start-at):
         # reuse the line instead of adding a duplicate; its values are set/verified next.
@@ -214,9 +216,11 @@ def _accept_auto_pick(ctx: RunContext, item: Item, entities: dict, created: bool
         entities[item.sku] = "selected"
     else:
         entities[item.sku] = "created"
-    table, _ = read_items(ctx)
-    if _line_for(table, item.sku) is None:
-        raise UIError(f"'Select a product' closed while searching {item.sku!r} but no line was added")
+    try:
+        wait_until(lambda: _line_for(read_items(ctx)[0], item.sku) is not None, ctx.timeout(), 0.1,
+                   desc=f"line {item.sku!r} after auto-pick")
+    except Exception as exc:  # noqa: BLE001
+        raise UIError(f"'Select a product' closed while searching {item.sku!r} but no line was added") from exc
     return f"line for {item.sku} added (selector picked the item number itself; {entities[item.sku]} product)"
 
 
@@ -292,7 +296,7 @@ def _set_line(ctx: RunContext, item: Item) -> str:
     ed = activate_editor(ctx, _L(ctx, "order_editor.tab"))     # one UIA walk per line, not per poll
     node = _items_table_node(ed, ctx)
     rect = node.rect
-    table = read_rect(ctx, rect, "items")
+    table = _quick_read(ctx, rect)
     for column in ("Qty.", "Discount", "U.Price"):
         idx = _line_for(table, item.sku)
         if idx is None:

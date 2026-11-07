@@ -212,6 +212,20 @@ def match_headers(raw: list[str], expected: list[str] | None, min_ratio: float =
 # ---------------------------------------------------------------- assembly
 
 _STROKES = {"I", "|", "l", "1", "!", "i", "/"}
+HEADER_MAX_OFFSET = 50     # px: the header row starts at the top of the table rect
+
+
+def _positional_headers(headers: list[str], expected: list[str] | None, n_columns: int) -> list[str]:
+    """Selected rows turn the header grey with white text, which OCR mostly misses (live: only
+    'Pos.' read). If the grid gave exactly the known number of columns (optionally plus the
+    empty filler column) and every header that WAS read sits at its expected position, the
+    known names are assigned by position. Any disagreement keeps the OCR'd headers."""
+    if not expected or n_columns not in (len(expected), len(expected) + 1):
+        return headers
+    positional = list(expected) + [""] * (n_columns - len(expected))
+    if all(h in ("", positional[i]) or h not in expected for i, h in enumerate(headers)) and             any(h != positional[i] for i, h in enumerate(headers)):
+        return positional
+    return headers
 
 
 def build_table(words: list[Word], table_rect: Rect, lines: list[int] | None,
@@ -228,11 +242,14 @@ def build_table(words: list[Word], table_rect: Rect, lines: list[int] | None,
     rows = group_rows(words, row_tolerance)
     if not rows:
         return Table([], [], [], [])
-    header_words, data_rows = rows[0], rows[1:]
+    if _bounding(rows[0]).top > table_rect.top + HEADER_MAX_OFFSET:
+        header_words, data_rows = [], rows          # header row not read at all: all rows are data
+    else:
+        header_words, data_rows = rows[0], rows[1:]
     columns = (columns_from_lines(lines, table_rect.left, table_rect.right) if lines
                else columns_from_header_words(header_words, table_rect.left, table_rect.right))
     raw = cells_for(header_words, columns)
-    headers = match_headers(raw, expected_headers)
+    headers = _positional_headers(match_headers(raw, expected_headers), expected_headers, len(columns))
     keys = [h if h else f"col{i}" for i, h in enumerate(headers)]
 
     out: list[Row] = []
@@ -388,9 +405,13 @@ def recover_dropped_cells(table: Table, img: Image.Image, rect: Rect, ocr_fn,  #
     return Table(table.headers, table.columns, new_rows, table.raw_headers)
 
 
-def header_band(words: list[Word], row_tolerance: int, pad: int = 6) -> tuple[int, int] | None:
-    """(top, bottom) in screen coords of the header row, padded so grid lines dominate it."""
+def header_band(words: list[Word], row_tolerance: int, pad: int = 6,
+                table_top: int | None = None) -> tuple[int, int] | None:
+    """(top, bottom) in screen coords of the header row, padded so grid lines dominate it.
+    With `table_top`: if no words were read near the top, assume a standard header strip."""
     rows = group_rows([w for w in words if w.text.strip()], row_tolerance)
+    if table_top is not None and (not rows or _bounding(rows[0]).top > table_top + HEADER_MAX_OFFSET):
+        return table_top + 4, table_top + 40
     if not rows:
         return None
     box = _bounding(rows[0])
@@ -404,7 +425,7 @@ def read_table(rect: Rect, expected_headers: list[str] | None = None, *, scale: 
 
     words, img = ocr_rect(rect, scale, language)
     lines: list[int] = []
-    band = header_band(words, row_tolerance)
+    band = header_band(words, row_tolerance, table_top=rect.top)
     if band:
         img_lines = detect_vertical_lines(img, band[0] - rect.top, band[1] - rect.top)
         lines = [rect.left + x for x in img_lines]

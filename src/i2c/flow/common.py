@@ -8,7 +8,7 @@ from i2c.errors import SelectorClosed, UIError
 from i2c.flow.context import RunContext
 from i2c.ui.find import Snapshot
 from i2c.ui.geom import Rect
-from i2c.ui.input import click, select_tab, set_text
+from i2c.ui.input import click, ensure_focus, escape_keys, get_value, select_tab, set_text
 from i2c.ui.table import Table, read_table
 from i2c.ui.wait import wait_stable, wait_until
 
@@ -165,12 +165,17 @@ def search_selector(ctx: RunContext, dialog_title: str, text: str, kind: str) ->
     snap = ctx.app.snapshot(dialog)
     box = snap.by_label(ctx.label("dialogs.search"), control_types=["Edit"])
     ctx.targets.append(box.rect)
-    try:
-        set_text(box.wrapper(), text, methods=("keys",))
-    except UIError as exc:
+    w = box.wrapper()
+    ensure_focus(w)
+    w.type_keys("^a{BACKSPACE}" + escape_keys(text), with_spaces=True, set_foreground=False)
+
+    def typed_or_closed() -> str | None:          # react at once to either outcome (0.1 s polls)
         if ctx.app.find_dialog(dialog_title) is None:
-            raise SelectorClosed(f"{dialog_title!r} closed while typing {text!r}") from exc
-        raise
+            return "closed"
+        return "typed" if get_value(w).strip() == text else None
+
+    if wait_until(typed_or_closed, 3.0, 0.1, desc=f"search text {text!r}") == "closed":
+        raise SelectorClosed(f"{dialog_title!r} closed while typing {text!r}")
     table = read_rect(ctx, snap.table_rect(), kind, equal_reads=3)
     ctx.targets.extend([box.rect] + [r.rect for r in table.rows])
     return table, snap

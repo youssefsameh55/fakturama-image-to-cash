@@ -146,3 +146,12 @@ def test_find_phrase_ignores_icon_words_live_bug():
     assert find_phrase(words, "New Order") == Rect(899, 230, 1024, 251)
     two = words + [w("New", 1300, 231, 40), w("Order", 1350, 231, 60)]
     assert find_phrase(two, "New Order") is None          # two separate tabs -> ambiguous
+
+
+def test_positional_headers_only_when_consistent():
+    from i2c.ui.table import _positional_headers
+    exp = ["Pos.", "Qty.", "Item No."]
+    assert _positional_headers(["Pos.", "", ""], exp, 3) == exp
+    assert _positional_headers(["Pos.", "", ""], exp, 4) == exp + [""]
+    assert _positional_headers(["Qty.", "", ""], exp, 3) == ["Qty.", "", ""]    # out of place: keep OCR
+    assert _positional_headers(["Pos.", "", ""], exp, 5) == ["Pos.", "", ""]    # column count differs
