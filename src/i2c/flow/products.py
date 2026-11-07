@@ -195,7 +195,7 @@ def _create_product(ctx: RunContext, item: Item) -> None:
         raise ManualReviewRequired(f"item {item.sku} lacks unit price or VAT", ctx.current_step)
     editor = _L(ctx, "product_editor.tab")
     snap = ctx.snapshot()
-    if snap.find("TabItem", name=editor) or snap.find("TabItem", name="*" + editor):
+    if [n for n in snap.find("TabItem") if n.name.lstrip("*") == editor]:
         raise ManualReviewRequired(f"an unsaved '{editor}' editor is already open; close it and re-run",
                                    ctx.current_step)
     click(snap.one("Text", _L(ctx, "left_panel.new_product")).wrapper())

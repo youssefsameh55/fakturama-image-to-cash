@@ -135,7 +135,7 @@ def create_debtor(ctx: RunContext) -> str:
     d = ctx.order.debtor
     editor = _L(ctx, "debtor_editor.tab")
     snap = ctx.snapshot()
-    if snap.find("TabItem", name=editor) or snap.find("TabItem", name="*" + editor):
+    if [n for n in snap.find("TabItem") if n.name.lstrip("*") == editor]:
         raise ManualReviewRequired(
             f"an unsaved '{editor}' editor is already open; close it (without saving) and re-run",
             ctx.current_step)

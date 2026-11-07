@@ -272,6 +272,7 @@ def find_phrase(words: list[Word], phrase: str, min_ratio: float = 0.85) -> Rect
 INK_THRESHOLD = 140          # grayscale below this = text pixel; grid lines (~180-220) are not ink
 CONTEXT_GAP = 20             # px between header and cell in the composite (measured: 20 works, 40 doesn't)
 CONTEXT_SCALE = 2.0
+PARTIAL_SLACK = 12           # px of ink allowed outside the OCR'd words before a cell counts as partly read
 
 
 def looks_selected(img: Image.Image, min_fraction: float = 0.5) -> bool:
@@ -297,9 +298,30 @@ def _fix_digit_lookalikes(text: str) -> str:
     return " ".join("0" if t in ("O", "o") else t for t in text.split())
 
 
+def _reread_variants(cell: Image.Image, head: Image.Image, ocr_fn):  # noqa: ANN001, ANN202
+    """Readings of one cell under a few layouts (measured live: which one works depends on the
+    header's descenders); callers keep the most complete consistent one."""
+    from PIL import ImageOps
+
+    for valign in ("bottom", "top"):      # 'bottom' first: the layout measured for dropped numbers
+        w = head.width + CONTEXT_GAP + cell.width + 40
+        h = max(head.height, cell.height) + 30
+        comp = Image.new("L", (w, h), 255)
+        comp.paste(head, (20, 15))
+        dy = 0 if valign == "top" else max(0, head.height - cell.height)
+        comp.paste(cell, (20 + head.width + CONTEXT_GAP, 15 + dy))
+        boundary = 20 + head.width + CONTEXT_GAP / 2
+        words = [x for x in ocr_fn(comp, CONTEXT_SCALE) if x.rect.cx > boundary]
+        yield _fix_digit_lookalikes(clean_text(" ".join(x.text for x in words)))
+    alone = ImageOps.expand(cell, 10, fill=255)
+    yield _fix_digit_lookalikes(clean_text(" ".join(x.text for x in ocr_fn(alone, CONTEXT_SCALE))))
+
+
 def recover_dropped_cells(table: Table, img: Image.Image, rect: Rect, ocr_fn,  # noqa: ANN001
                           header_top: int, header_bottom: int, pad: int = 4) -> Table:
-    """Re-read cells that came back empty but contain ink, using header context.
+    """Re-read cells that OCR dropped fully (empty but inked) or partly (ink extends beyond the
+    words read: 'VAT 19%' came back as 'VAT', seen live), using header context. A partial
+    cell's re-read is kept only if it still contains the first reading.
 
     `img` is the capture of `rect`; `header_top/bottom` are screen y of the header row;
     `ocr_fn(image, scale) -> list[Word]` (coords in the composite's unscaled pixels).
@@ -316,23 +338,32 @@ def recover_dropped_cells(table: Table, img: Image.Image, rect: Rect, ocr_fn,  #
     for row in table.rows:
         cells = dict(row.cells)
         for i, ((a, b), key) in enumerate(zip(table.columns, keys)):
-            if cells.get(key):
-                continue
-            cell = _ink_crop(gray.crop((a - rect.left + 3, row.rect.top - rect.top - pad,
-                                        b - rect.left - 3, row.rect.bottom - rect.top + pad)))
+            box = (a - rect.left + 3, row.rect.top - rect.top - pad, b - rect.left - 3, row.rect.bottom - rect.top + pad)
+            crop = gray.crop(box)
+            ink = ink_bbox(crop)
+            old = cells.get(key, "")
+            if old:
+                read = [w for w in row.words if a <= w.rect.cx < b]
+                if not read or ink is None:
+                    continue
+                left = min(w.rect.left for w in read) - rect.left - box[0]
+                right = max(w.rect.right for w in read) - rect.left - box[0]
+                if ink[0] >= left - PARTIAL_SLACK and ink[2] <= right + PARTIAL_SLACK:
+                    continue      # every inked pixel is covered by the words read
+            cell = crop.crop(ink) if ink else None
             head = heads[i] or fallback_head
             if cell is None or head is None:
                 continue
-            w = head.width + CONTEXT_GAP + cell.width + 40
-            h = max(head.height, cell.height) + 30
-            comp = Image.new("L", (w, h), 255)
-            comp.paste(head, (20, 15))
-            comp.paste(cell, (20 + head.width + CONTEXT_GAP, 15 + max(0, head.height - cell.height)))
-            boundary = 20 + head.width + CONTEXT_GAP / 2
-            words = [x for x in ocr_fn(comp, CONTEXT_SCALE) if x.rect.cx > boundary]
-            text = _fix_digit_lookalikes(clean_text(" ".join(x.text for x in words)))
-            if text:
-                cells[key] = text
+            best = old
+            for text in _reread_variants(cell, head, ocr_fn):
+                if not old:                     # fully dropped: first reading wins (measured)
+                    if text:
+                        best = text
+                        break
+                elif text and _norm(best) in _norm(text) and len(text) > len(best):
+                    best = text                 # partly read: most complete consistent reading
+            if best != old:
+                cells[key] = best
         new_rows.append(Row(cells, row.rect, row.words))
     return Table(table.headers, table.columns, new_rows, table.raw_headers)
 

@@ -54,7 +54,7 @@ def _save_enabled(ctx: RunContext) -> bool:
 
 def open_order(ctx: RunContext) -> str:
     snap = ctx.snapshot()
-    if snap.find("TabItem", name=_pane(ctx)):
+    if [n for n in snap.find("TabItem") if n.name.lstrip("*") == _pane(ctx)]:   # '*New Order' when edited
         raise ManualReviewRequired(
             f"an unsaved '{_pane(ctx)}' editor is already open; close it (without saving) and "
             "re-run, so this run cannot write into a stale order", ctx.current_step)
