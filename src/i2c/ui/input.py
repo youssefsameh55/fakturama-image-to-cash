@@ -43,10 +43,38 @@ def _set_via_value(ctrl: object, text: str) -> None:
     ctrl.iface_value.SetValue(text)  # type: ignore[attr-defined]
 
 
+def has_focus(ctrl: object) -> bool:
+    try:
+        return bool(ctrl.element_info.element.CurrentHasKeyboardFocus)  # type: ignore[attr-defined]
+    except Exception:  # noqa: BLE001
+        return False
+
+
+def ensure_focus(ctrl: object, timeout: float = 1.5) -> None:
+    """Give `ctrl` keyboard focus and PROVE it before any keystroke is sent.
+
+    Live: keys meant for a dialog's search box landed in the order's Items table (which then
+    added a product line by its item number). Typing blind is never allowed: focus via UIA,
+    else a click into the control, else stop.
+    """
+    for attempt in ("focus", "click"):
+        try:
+            if attempt == "focus":
+                ctrl.set_focus()  # type: ignore[attr-defined]
+            else:
+                ctrl.click_input()  # type: ignore[attr-defined]
+            wait_until(lambda: has_focus(ctrl), timeout, interval=0.05, desc="keyboard focus")
+            return
+        except Exception:  # noqa: BLE001
+            continue
+    raise UIError("control did not take keyboard focus; refusing to type blind")
+
+
 def _set_via_keys(ctrl: object, text: str) -> None:
-    ctrl.set_focus()  # type: ignore[attr-defined]
+    ensure_focus(ctrl)
+    # set_foreground=False: bringing the top-level window forward can move focus elsewhere.
     ctrl.type_keys("^a{BACKSPACE}" + escape_keys(text), with_spaces=True,  # type: ignore[attr-defined]
-                   with_tabs=False, with_newlines=False, set_foreground=True)
+                   with_tabs=False, with_newlines=False, set_foreground=False)
 
 
 _TEXT_METHODS = {"value": _set_via_value, "keys": _set_via_keys}

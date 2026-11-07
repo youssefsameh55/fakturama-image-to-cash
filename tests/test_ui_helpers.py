@@ -64,10 +64,31 @@ class FakeEdit:
         self.iface_value = FakeValue(self)
         self.typed = []
 
+    focusable = True
+
+    @property
+    def element_info(self):
+        edit = self
+
+        class _El:
+            @property
+            def CurrentHasKeyboardFocus(self):  # noqa: N802
+                return edit.focused
+
+        class _Info:
+            element = _El()
+        return _Info()
+
+    focused = False
+
     def set_focus(self):
-        pass
+        self.focused = self.focusable
+
+    def click_input(self, **_):
+        self.focused = self.focusable
 
     def type_keys(self, keys, **_):
+        assert self.focused, "typed without keyboard focus"
         self.typed.append(keys)
         raw = keys.replace("^a{BACKSPACE}", "")
         for c in "+^%~(){}[]":
@@ -193,3 +214,11 @@ def test_evidence_numbering_with_given_image(tmp_path):
     p2 = ev.shot("Set header!", "failed", ok=False, image=img, origin=(0, 0))
     assert p1.name == "01_open_order.png" and p2.name == "02_set_header.png" and p2.exists()
     assert slug("  ") == "step"
+
+
+def test_keys_refused_without_focus():
+    e = FakeEdit(value_pattern_broken=True)
+    e.focusable = False
+    with pytest.raises(UIError):
+        set_text(e, "MAT-DESK-02", methods=("keys",), timeout=0.05)
+    assert e.typed == []          # nothing typed blind

@@ -139,15 +139,16 @@ def open_selector(ctx: RunContext, editor: str, label_key: str, dialog_title: st
     icon = ed.icons_below(ctx.label(label_key))[0]
     ctx.targets.append(icon.rect)
     click(icon.wrapper())
-    return ctx.app.wait_dialog(dialog_title, ctx.timeout("window"))
+    return ctx.app.wait_dialog(dialog_title, ctx.timeout("window"), ready="Edit")
 
 
 def search_selector(ctx: RunContext, dialog_title: str, text: str, kind: str) -> tuple[Table, Snapshot]:
     """Type `text` into the dialog's search box (real keystrokes, so the filter fires) and
     read the result table once it is stable."""
-    dialog = ctx.app.wait_dialog(dialog_title)
+    dialog = ctx.app.wait_dialog(dialog_title, ready="Edit")
     snap = ctx.app.snapshot(dialog)
     box = snap.by_label(ctx.label("dialogs.search"), control_types=["Edit"])
+    ctx.targets.append(box.rect)
     set_text(box.wrapper(), text, methods=("keys",))
     table = read_rect(ctx, snap.table_rect(), kind, equal_reads=3)
     ctx.targets.extend([box.rect] + [r.rect for r in table.rows])

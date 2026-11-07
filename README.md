@@ -132,6 +132,12 @@ See `PLAN.md` §9 (G1–G6). Additional implementation decisions:
   grid lines, row from the OCR box), types into the inline `Edit` that UIA exposes inside the table,
   and presses Enter (then Esc if the editor stays open). Every value is checked by OCR. A line
   discount is shown as negative ("-10.00 %"), so the check ignores its sign.
+- **The run never types without verified keyboard focus.** In one live run, keystrokes meant for a
+  dialog's search box reached the order's Items table, which accepts a typed item number and
+  added a product line by itself. Before any keystroke, the target control must report keyboard
+  focus through UIA (set by UIA focus, else by clicking into it); otherwise the step stops. Keys
+  are sent without forcing the main window to the foreground. Selector dialogs count as open only
+  once their search box exists.
 - **Polling uses cheap reads.** While waiting for a cell value, the run does one OCR pass of the
   already known table rectangle (about 0.1–0.2 s) instead of a full UIA walk of the window (about
   1.5 s). The final verification still uses a stable double read.

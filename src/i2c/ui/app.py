@@ -89,9 +89,16 @@ class FakturamaApp:
                 return w
         return None
 
-    def wait_dialog(self, title: str, timeout: float | None = None):  # noqa: ANN201
-        return wait_until(lambda: self.find_dialog(title), timeout or self.timeout,
-                          desc=f"dialog {title!r}")
+    def wait_dialog(self, title: str, timeout: float | None = None, ready: str | None = None):  # noqa: ANN201
+        """Wait for a dialog; with `ready`, also for a visible control of that UIA type inside it
+        (a window with the right title can exist a moment before its contents do)."""
+        def found():  # noqa: ANN202
+            dlg = self.find_dialog(title)
+            if dlg is None or not ready:
+                return dlg
+            return dlg if self.snapshot(dlg, max_depth=12).find(ready) else None
+
+        return wait_until(found, timeout or self.timeout, desc=f"dialog {title!r}")
 
     def wait_dialog_closed(self, title: str, timeout: float | None = None) -> None:
         wait_until(lambda: self.find_dialog(title) is None, timeout or self.timeout,
