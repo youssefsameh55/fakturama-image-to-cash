@@ -32,7 +32,7 @@ def run_flow(ctx: RunContext, stages: list[tuple[str, list[Step]]], stop_after: 
              not_implemented: tuple[str, ...] = ()) -> int:
     started = time.monotonic()
     summary: dict = {"status": "running", "started": datetime.now().isoformat(timespec="seconds"),
-                     "steps": [], "stages_done": []}
+                     "steps": [], "stages_done": [], "stage_durations_s": {}}
     code = EXIT_OK
     try:
         for stage, steps in stages:
@@ -42,8 +42,12 @@ def run_flow(ctx: RunContext, stages: list[tuple[str, list[Step]]], stop_after: 
                 summary["stopped_at"] = stage
                 break
             log.info("=== stage %s", stage)
-            for step in steps:
-                _run_step(ctx, stage, step, summary)
+            t_stage = time.monotonic()
+            try:
+                for step in steps:
+                    _run_step(ctx, stage, step, summary)
+            finally:
+                summary["stage_durations_s"][stage] = round(time.monotonic() - t_stage, 1)
             summary["stages_done"].append(stage)
             if stage == stop_after:
                 log.info("--stop-after %s reached", stage)

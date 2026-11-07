@@ -45,3 +45,13 @@ def test_invoice_items_rect_clipped_at_remarks():
     snap = Snapshot.take(load_dump(ROOT / "tests/fixtures/uia/invoice.txt"))
     ed = snap.within(snap.find("Pane", name="New Invoice")[0])
     assert _items_table_rect(ed, ctx()) == Rect(686, 712, 2944, 948)     # pane went to 996
+
+
+def test_document_state_words():
+    from i2c.flow.save_order import state_is
+    c = ctx()
+    assert state_is(c, {"State": "open"}, "open")
+    assert state_is(c, {"State": "▤ open"}, "open")              # status icon OCR'd in front
+    assert state_is(c, {"State": "paid"}, "paid")
+    assert not state_is(c, {"State": "unpaid"}, "paid")
+    assert not state_is(c, {"State": "open"}, "paid")

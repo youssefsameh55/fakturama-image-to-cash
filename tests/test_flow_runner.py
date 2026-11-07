@@ -31,7 +31,8 @@ class StaticEvidence(Evidence):
 def ctx(tmp_path):
     settings = load_settings(ROOT)
     order = OrderData.model_validate(json.loads(FIXTURE.read_text(encoding="utf-8")))
-    return RunContext(settings, order, app=None, evidence=StaticEvidence(tmp_path), run_dir=tmp_path)
+    return RunContext(settings, order, app=None, evidence=StaticEvidence(tmp_path, background=False),
+                      run_dir=tmp_path)
 
 
 def _summary(ctx):

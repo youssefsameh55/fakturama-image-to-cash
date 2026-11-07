@@ -65,14 +65,18 @@ class Snapshot:
         property walk of Fakturama's window). Fallback: the plain recursive walk (also used
         for the fake trees in offline tests).
         """
+        from i2c.perf import timed
+
         info = getattr(root, "element_info", root)
         element = getattr(info, "element", None)
         if element is not None and hasattr(element, "BuildUpdatedCache"):
             try:
-                return cls._take_cached(element, max_depth)
+                with timed("uia_snapshot_cached"):
+                    return cls._take_cached(element, max_depth)
             except Exception:  # noqa: BLE001 - fall back to the slow but simple walk
                 pass
-        return cls._take_walk(info, max_depth)
+        with timed("uia_snapshot_walk"):
+            return cls._take_walk(info, max_depth)
 
     @classmethod
     def _take_cached(cls, element: object, max_depth: int) -> Snapshot:

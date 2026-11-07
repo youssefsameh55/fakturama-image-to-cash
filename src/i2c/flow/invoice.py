@@ -16,7 +16,7 @@ from i2c.flow.context import RunContext
 from i2c.flow.debtor import _address_box_text, _expect_address, show_address_tab
 from i2c.flow.order import _price_mode_combo
 from i2c.flow.runner import Step
-from i2c.flow.save_order import check_document, find_document, verify_lines, verify_totals
+from i2c.flow.save_order import check_document, find_document, state_is, verify_lines, verify_totals
 from i2c.calc import close, parse_decimal
 from i2c.match import cell_matches, norm
 from i2c.models import PaymentStatus
@@ -79,10 +79,17 @@ def check_invoice(ctx: RunContext) -> str:
     inv_tab = _L(ctx, "order_editor.invoice_address_tab")
     ed = show_address_tab(ctx, invoice_tab(ctx), inv_tab)
     _expect_address(_address_box_text(ctx, ed, inv_tab), o.debtor.billing_address, o.debtor.company, "invoice")
+    addresses = "invoice address"
+    if not o.debtor.delivery_same_as_billing:                       # plan 5.1: delivery copied too
+        dl_tab = _L(ctx, "order_editor.delivery_address_tab")
+        ed = show_address_tab(ctx, invoice_tab(ctx), dl_tab)
+        _expect_address(_address_box_text(ctx, ed, dl_tab), o.debtor.delivery_address, o.debtor.company, "delivery")
+        show_address_tab(ctx, invoice_tab(ctx), inv_tab)
+        addresses = "invoice + delivery address"
     ed = _editor(ctx)
     lines = verify_lines(ctx, ed)
     shown = verify_totals(ctx, _editor(ctx))
-    return (f"copied from order: Cust.Ref., Order Date {o.order_date}, Net / With VAT, invoice address, "
+    return (f"copied from order: Cust.Ref., Order Date {o.order_date}, Net / With VAT, {addresses}, "
             f"{len(lines)} lines, totals {shown['net']} / {shown['vat']} / {shown['gross']}")
 
 
@@ -158,13 +165,15 @@ def verify_documents(ctx: RunContext) -> str:
     inv = find_document(ctx, inv_no)
     warnings = ctx.results.setdefault("warnings", [])
     problems = check_document(inv, None, o.external_reference, o.totals.gross, warnings)  # invoice date = today
-    state = norm(inv.get("State"))
-    if o.payment.status is PaymentStatus.PAID and ("unpaid" in state or "paid" not in state):
-        problems.append(f"State {inv.get('State')!r} (expected paid)")
+    want_state = "paid" if o.payment.status is PaymentStatus.PAID else "unpaid"
+    if not state_is(ctx, inv, want_state):
+        problems.append(f"State {inv.get('State')!r} (expected {_L(ctx, 'documents_state.' + want_state)!r})")
     if problems:
         raise UIError(f"invoice {inv_no} in Documents differs: {problems} (row {inv})")
     order = find_document(ctx, order_no)
     order_problems = check_document(order, o.order_date, o.external_reference, o.totals.gross, warnings)
+    if not state_is(ctx, order, "open"):
+        order_problems.append(f"State {order.get('State')!r} (expected {_L(ctx, 'documents_state.open')!r})")
     if order_problems:
         raise UIError(f"order {order_no} changed in Documents: {order_problems} (row {order})")
     ctx.results["invoice_document"], ctx.results["order_document"] = inv, order

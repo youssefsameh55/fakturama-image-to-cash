@@ -160,7 +160,8 @@ def create_debtor(ctx: RunContext) -> str:
         extra = _L(ctx, "debtor_editor.additional_tab")
         wait_until(lambda: ctx.editor(editor).find("TabItem", name=extra), ctx.timeout(), ctx.interval,
                    desc=f"tab {extra!r}")
-        activate_subtab(ctx, editor, extra, lambda s: _active_address_tab(s) == extra)
+        prefixes = tuple(ctx.label("debtor_editor.address_tab_prefixes"))
+        activate_subtab(ctx, editor, extra, lambda s: _active_address_tab(s, prefixes) == extra)
         _fill_address(ctx, editor, d.delivery_address, d.company, contact=(None, None),
                       roles={invoice_role: False, delivery_role: True})
 
@@ -197,9 +198,10 @@ def _verify_saved_debtor(ctx: RunContext) -> None:
     ctx.targets.append(view.table_rect())
 
 
-def _active_address_tab(ed: Snapshot) -> str | None:
-    """Which address sub-tab is shown: probe dumps expose the active one as a `Tab` node."""
-    tabs = [n.name for n in ed.find("Tab") if n.name.startswith(("Main address", "additional address"))]
+def _active_address_tab(ed: Snapshot, prefixes: tuple[str, ...] = ("Main address", "additional address")) -> str | None:
+    """Which address sub-tab is shown: probe dumps expose the active one as a `Tab` node.
+    `prefixes` come from settings (labels.debtor_editor.address_tab_prefixes)."""
+    tabs = [n.name for n in ed.find("Tab") if n.name.startswith(tuple(prefixes))]
     return tabs[0] if len(tabs) == 1 else None
 
 

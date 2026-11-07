@@ -16,6 +16,7 @@ from i2c.ui.wait import wait_until
 log = logging.getLogger(__name__)
 
 _SENDKEYS_SPECIAL = set("+^%~(){}[]")
+KEY_PAUSE = 0.01   # s between keystrokes (pywinauto default 0.05 = 1 s per 20 chars); set from settings
 
 
 def escape_keys(text: str) -> str:
@@ -57,13 +58,16 @@ def ensure_focus(ctrl: object, timeout: float = 1.5) -> None:
     added a product line by its item number). Typing blind is never allowed: focus via UIA,
     else a click into the control, else stop.
     """
+    if has_focus(ctrl):
+        return
     for attempt in ("focus", "click"):
         try:
             if attempt == "focus":
                 ctrl.set_focus()  # type: ignore[attr-defined]
             else:
                 ctrl.click_input()  # type: ignore[attr-defined]
-            wait_until(lambda: has_focus(ctrl), timeout, interval=0.05, desc="keyboard focus")
+            wait_until(lambda: has_focus(ctrl), timeout / 3 if attempt == "focus" else timeout,
+                       interval=0.05, desc="keyboard focus")
             return
         except Exception:  # noqa: BLE001
             continue
@@ -74,7 +78,7 @@ def _set_via_keys(ctrl: object, text: str) -> None:
     ensure_focus(ctrl)
     # set_foreground=False: bringing the top-level window forward can move focus elsewhere.
     ctrl.type_keys("^a{BACKSPACE}" + escape_keys(text), with_spaces=True,  # type: ignore[attr-defined]
-                   with_tabs=False, with_newlines=False, set_foreground=False)
+                   with_tabs=False, with_newlines=False, set_foreground=False, pause=KEY_PAUSE)
 
 
 _TEXT_METHODS = {"value": _set_via_value, "keys": _set_via_keys}

@@ -212,6 +212,7 @@ def test_evidence_numbering_with_given_image(tmp_path):
     img = Image.new("RGB", (200, 100), "white")
     p1 = ev.shot("Open order", "editor open", image=img, origin=(0, 0))
     p2 = ev.shot("Set header!", "failed", ok=False, image=img, origin=(0, 0))
+    ev.close()                                   # PNGs are written in the background
     assert p1.name == "01_open_order.png" and p2.name == "02_set_header.png" and p2.exists()
     assert slug("  ") == "step"
 

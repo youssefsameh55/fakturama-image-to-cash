@@ -59,7 +59,10 @@ def ocr_image(img: Image.Image, origin: tuple[int, int] = (0, 0), scale: float =
     writer.write_bytes(src.tobytes("raw", "BGRA"))
     bitmap = SoftwareBitmap.create_copy_from_buffer(
         writer.detach_buffer(), BitmapPixelFormat.BGRA8, src.width, src.height)
-    result = asyncio.run(_recognize(_engine(language), bitmap))
+    from i2c.perf import timed
+
+    with timed("ocr_pass"):
+        result = asyncio.run(_recognize(_engine(language), bitmap))
 
     ox, oy = origin
     words: list[Word] = []

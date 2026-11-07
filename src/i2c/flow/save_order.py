@@ -185,6 +185,13 @@ def money_matches(cell: str | None, want: Decimal) -> bool:
     return got is not None and close(got, want)
 
 
+def state_is(ctx: RunContext, row: dict, key: str) -> bool:
+    """Documents 'State' cell equals the configured word (paid must not match 'unpaid')."""
+    from i2c.match import norm
+
+    return norm(row.get("State")).split() [-1:] == [norm(_L(ctx, f"documents_state.{key}"))]
+
+
 def check_document(row: dict, date, cust_ref: str | None, total: Decimal | None,  # noqa: ANN001
                    warnings: list[str] | None = None) -> list[str]:
     """Problems (hard) for Date and Total. Cust.Ref. is a hyphen-heavy code OCR mangles
@@ -210,6 +217,8 @@ def verify_order_document(ctx: RunContext) -> str:
     warnings = ctx.results.setdefault("warnings", [])
     problems = check_document(row, ctx.order.order_date, ctx.order.external_reference, ctx.order.totals.gross,
                               warnings)
+    if not state_is(ctx, row, "open"):
+        problems.append(f"State {row.get('State')!r} (expected {_L(ctx, 'documents_state.open')!r})")
     if problems:
         raise UIError(f"order {number} in Documents differs: {problems} (row {row})")
     return f"Documents: {row.get('Document')} {row.get('Date')} {row.get('State')} {row.get('Total')}"

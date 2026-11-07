@@ -130,9 +130,46 @@ def cmd_extract(args: argparse.Namespace) -> int:
     return EXIT_OK
 
 
+def _finish_run(run_dir: Path, t_start: float, t_ui: float | None, code: int) -> None:
+    """Total wall-clock time (extraction/JSON load + attach + UI flow) -> summary.json, run.log
+    and a console block, printed for every run (also failed ones)."""
+    import time
+
+    from i2c import perf
+
+    total = time.perf_counter() - t_start
+    path = run_dir / "summary.json"
+    summary = json.loads(path.read_text(encoding="utf-8")) if path.exists() else {"status": "error"}
+    summary["total_s"] = round(total, 1)
+    summary["prepare_s"] = round((t_ui or time.perf_counter()) - t_start, 1)   # extraction / JSON + attach
+    summary["perf"] = perf.report()
+    path.write_text(json.dumps(summary, indent=2, ensure_ascii=False, default=str), encoding="utf-8")
+
+    res = summary.get("results", {})
+    stages = summary.get("stage_durations_s", {})
+    width = max([len(s) for s in stages] + [12])
+    row = lambda k, v: f"  {k:<{width}}: {v}"  # noqa: E731
+    lines = ["", "=" * 60,
+             row("status", f"{summary.get('status')}  (exit {code})"),
+             row("order", f"{res.get('order_no', '-')}    invoice: {res.get('invoice_no', '-')}"),
+             row("entities", res.get("entities", {}))]
+    if summary.get("status") not in ("ok", "incomplete"):
+        lines.append(row("stopped at", f"{summary.get('step')} - {str(summary.get('reason'))[:160]}"))
+    lines.append(row("prepare", f"{summary['prepare_s']:7.1f} s   (extraction/JSON + attach)"))
+    lines += [row(name, f"{secs:7.1f} s") for name, secs in stages.items()]
+    lines += [row("TOTAL", f"{total:7.1f} s"), "=" * 60, f"  details: {run_dir}", ""]
+    block = "\n".join(lines)
+    log.info("workflow finished in %.1f s (status %s)%s", total, summary.get("status"), block)
+    sys.stdout.reconfigure(encoding="utf-8")
+    print(block)
+
+
 def cmd_run(args: argparse.Namespace) -> int:
+    import time
+
     from i2c.ui.app import FakturamaApp, set_dpi_awareness
 
+    t_start = time.perf_counter()
     set_dpi_awareness()  # before any UIA / capture call
 
     from i2c.config import load_settings
@@ -167,9 +204,13 @@ def cmd_run(args: argparse.Namespace) -> int:
         log.error("%s: %s", type(exc).__name__, exc)
         return EXIT_ERROR
 
+    from i2c.ui import input as input_mod
+
+    input_mod.KEY_PAUSE = float(settings.get("input.key_pause", input_mod.KEY_PAUSE))
     app = FakturamaApp(settings.window_title, float(settings.get("timeouts.window", 15))).attach()
     app.focus()
     ctx = RunContext(settings, order, app, Evidence(run_dir, area=app.rect), run_dir)
+    t_ui = time.perf_counter()
 
     implemented = {"order": order_stage.STEPS, "debtor": debtor_stage.STEPS,
                    "products": products_stage.make_steps(order.items),
@@ -179,7 +220,12 @@ def cmd_run(args: argparse.Namespace) -> int:
         log.warning("starting at stage %r: earlier stages are assumed done in the open editors", args.start_at)
     stages = [(name, implemented.get(name, [])) for name in names]
     missing = tuple(name for name in names if name not in implemented)
-    return run_flow(ctx, stages, args.stop_after, not_implemented=missing)
+    try:
+        code = run_flow(ctx, stages, args.stop_after, not_implemented=missing)
+    finally:
+        ctx.evidence.close()                 # wait for background screenshot writes
+    _finish_run(run_dir, t_start, t_ui, code)
+    return code
 
 
 def main(argv: list[str] | None = None) -> int:

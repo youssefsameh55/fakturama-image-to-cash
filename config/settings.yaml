@@ -10,7 +10,7 @@ timeouts:            # seconds
   window: 15
   table_stable: 8
   save: 15
-  poll_interval: 0.25
+  poll_interval: 0.1             # UIA snapshots are one cached call now: cheap to poll
 
 ocr:
   upscale: 1                     # measured on probe screenshots: 2x upscaling hurts on a high-DPI screen
@@ -21,6 +21,7 @@ input:
   text_methods: [keys, value]    # live: UIA SetValue changed the Debtor's Company box on screen but not in
                                  # Fakturama's data (saved empty) -> real keystrokes first; all read back
   date_pattern: "{mon} {day}, {year}"   # probe: Fakturama shows 'Nov 7, 2026'
+  key_pause: 0.01                # s between keystrokes (pywinauto default 0.05)
   date_method: arrows            # arrows | text. Live: text set via UIA reverted to today -> arrow keys per field
 
 tables:                          # canonical column headers (OCR text is fuzzy-matched to these)
@@ -108,6 +109,7 @@ labels:                                # confirmed against UIA probe dumps (arti
     tab_main_address: "Main address"
     tab_misc: "Miscellaneous"              # holds the Payment combo (there is no Payment tab)
     tab_main_address_name: "Main address"
+    address_tab_prefixes: ["Main address", "additional address"]
     customer_id: "Customer ID"
     company: "Company"
     name: "First Name Last Name"           # one label, two Edits
@@ -166,5 +168,9 @@ labels:                                # confirmed against UIA probe dumps (arti
     value: "Value"                         # Edit "Value" (paid amount)
     due_days: "Due Days"
     pay_until: "Pay Until"
+  documents_state:                     # Data > Documents 'State' column (seen live)
+    open: "open"
+    paid: "paid"
+    unpaid: "unpaid"
   common:
     save: "Save the current contents"

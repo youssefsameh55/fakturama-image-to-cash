@@ -9,6 +9,7 @@ from i2c.errors import SelectorClosed, UIError
 from i2c.flow.context import RunContext
 from i2c.ui.find import Snapshot
 from i2c.ui.geom import Rect
+from i2c.ui import input as input_mod
 from i2c.ui.input import click, ensure_focus, escape_keys, get_value, select_tab, set_text
 from i2c.ui.table import Table, read_table
 from i2c.ui.wait import wait_stable, wait_until
@@ -231,7 +232,8 @@ def search_selector(ctx: RunContext, dialog_title: str, text: str, kind: str) ->
     ctx.targets.append(box.rect)
     w = box.wrapper()
     ensure_focus(w)
-    w.type_keys("^a{BACKSPACE}" + escape_keys(text), with_spaces=True, set_foreground=False)
+    w.type_keys("^a{BACKSPACE}" + escape_keys(text), with_spaces=True, set_foreground=False,
+                pause=input_mod.KEY_PAUSE)
 
     def typed_or_closed() -> str | None:          # react at once to either outcome (0.1 s polls)
         if ctx.app.find_dialog(dialog_title) is None:

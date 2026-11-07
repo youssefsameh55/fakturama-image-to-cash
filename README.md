@@ -5,7 +5,7 @@ payment status set), checking every step. Order data is extracted once by an LLM
 Fakturama is then driven through Microsoft UI Automation (pywinauto, UIA backend), with Windows
 OCR used for Fakturama's custom-drawn tables. No hardcoded screen coordinates.
 
-See `PLAN.md` for the full design. `DESIGN.md` (Part 1) will be written after the UI probe.
+See `PLAN.md` for the full design. `DESIGN.md` (Part 1) is still to be written (see Skipped).
 
 ## Status
 
@@ -18,8 +18,8 @@ See `PLAN.md` for the full design. `DESIGN.md` (Part 1) will be written after th
 | M4 Run framework + stage `order` | done; live run verified (PO000001, Jul 14 2026, Cust.Ref., Net, With VAT) |
 | M5 Stage `debtor` (match / payment method / create / select) | done; verified live (create path and select-existing path) |
 | M6 Stage `products` (VAT, products, lines) | done; verified live (VAT + products created, lines set and read back, 27.7 s) |
-| M7 Stages `save_order` + `invoice` | code done, offline-tested; live run pending |
-| M8 Deliverables | not started |
+| M7 Stages `save_order` + `invoice` | done; verified live (PO000003 saved, INV000001 via follow-up, paid 2026-07-18, 678.30, both checked in Documents) |
+| M8 Deliverables | README done; DESIGN.md and recording pending |
 
 ## Setup
 
@@ -36,12 +36,30 @@ copy .env.example .env   # then fill in ANTHROPIC_API_KEY (or GEMINI_API_KEY + L
 
 ```powershell
 python -m i2c extract samples/order_01.png            # extraction only -> artifacts/<run-id>/extracted.json
-python -m i2c run --from-json <extracted.json> --stop-after order   # drive Fakturama, stage by stage
+python -m i2c run samples/order_01.png                # full flow (extraction is cached after the first call)
+python -m i2c run --from-json <extracted.json>         # same, skipping the LLM entirely
+python -m i2c run --from-json <extracted.json> --stop-after order   # develop stage by stage
+python -m i2c run --from-json <extracted.json> --start-at save_order # resume in the open editors
 python tools/dump_tree.py --list                       # list Fakturama's top-level windows
 python tools/dump_tree.py --window ".*Fakturama.*" --delay 5 --out artifacts/probe/main
 python tools/read_table.py --view "VATs" --kind vats   # live: read a table via UIA rect + OCR
 pytest -q                                              # offline tests
 ```
+
+### What a run produces
+
+`artifacts/<run-id>/`: `extracted.json`, `run.log`, one annotated screenshot per step
+(`NN_<stage>_<step>.png`; green banner = verified, red = stopped) and `summary.json`:
+
+- status (`ok` | `manual_review` | `error`), order and invoice numbers;
+- per entity whether it was **selected or created** (debtor, payment method, each VAT, each product);
+- every step with its verification message, duration and screenshot;
+- warnings (e.g. a resumed run, or an OCR'd value that was checked exactly elsewhere);
+- `stage_durations_s`, `total_s` (wall clock, including extraction/JSON load and attaching), and
+  `perf` (count and time of UIA snapshots, OCR passes and screenshot captures).
+
+The same timing summary is printed to the console and written to `run.log` at the end of every
+run, including failed ones. Exit codes: 0 ok · 2 usage · 3 manual review · 4 error.
 
 ## Decisions on ambiguities in the brief
 
@@ -165,8 +183,31 @@ See `PLAN.md` §9 (G1–G6). Additional implementation decisions:
 
 ## Skipped / not implemented
 
-_To be filled in as the work goes on._
+- **`DESIGN.md` (Part 1) and a screen recording** aren't written or recorded yet. The annotated
+  per-step screenshots in `artifacts/<run-id>/` cover the evidence requirement in the meantime.
+- **An existing VAT's code (S) isn't re-checked.** The VATs list has no code column; new VATs are
+  created with code S.
+- **The negative test** (a same-name Debtor with a different ZIP, which must stop for manual
+  review) is covered by unit tests on the matcher but hasn't been run against Fakturama.
+- **Multi-page tables.** Selector dialogs, Items and Documents are read from the visible rows
+  only. Searches filter them down to a handful of rows, and the sample order has 2 lines; a long
+  order would need scrolling.
+- **Launching Fakturama** is out of scope: it must already be running (English UI).
+- **Only the sample order was run end to end.** No other images (photos, skewed scans) were tried.
 
 ## If I had 3 more hours
 
-_To be written at M8._
+1. **One clean, uninterrupted end-to-end run on a fresh Fakturama database** (all *create*
+   paths), then a second run on the same image (all *select* paths), plus the negative ZIP
+   conflict test, each recorded.
+2. **Remove most OCR from verification.** Read the saved records back through Fakturama's own
+   data instead (e.g. reopen the saved document, or read-only checks against its database) and
+   keep OCR only for choosing rows.
+3. **Scrolling for long tables** (Items with many lines, large Documents and selector lists).
+4. **Speed:** replace the remaining fixed OCR passes on known rectangles with cached reads and
+   cut redundant verification reads. A run is about 2–2.5 minutes, of which roughly half is
+   deliberate verification.
+5. **OCR-first extraction with LLM fallback** (the plan's stretch goal), and robustness tests on
+   photographed or skewed order images.
+6. **CI** for the offline tests, plus a recorded-UI regression set built from the probe dumps
+   and live captures already in `tests/fixtures/`.
