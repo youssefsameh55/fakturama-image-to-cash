@@ -222,13 +222,15 @@ class Snapshot:
             raise AmbiguousElement(f"{len(found)} tabs named {name!r}")
         return found[0]
 
-    def is_leaf_pane(self, node: Node) -> bool:
-        """A Pane whose subtree holds nothing but scrollbars: how NatTable shows up in UIA."""
+    def is_leaf_pane(self, node: Node, allow: Iterable[str] = ()) -> bool:
+        """A Pane whose subtree holds nothing but scrollbars: how NatTable shows up in UIA.
+        `allow`: extra control types tolerated inside (e.g. an open inline cell editor)."""
         if node.control_type != "Pane":
             return False
+        ok = set(allow)
         for d in self.descendants(node):
-            if d.control_type == "ScrollBar" or any(a.control_type == "ScrollBar"
-                                                    for a in self.ancestors(d)):
+            if d.control_type == "ScrollBar" or d.control_type in ok or any(
+                    a.control_type == "ScrollBar" or a.control_type in ok for a in self.ancestors(d)):
                 continue
             return False
         return True

@@ -33,6 +33,7 @@ from i2c.ui.wait import wait_until
 log = logging.getLogger(__name__)
 
 DIALOG = "dialogs.select_product"
+INLINE_EDITORS = ("Edit", "ComboBox", "List", "ListItem")   # NatTable cell editors live inside the table pane
 
 
 def _L(ctx: RunContext, key: str) -> str:  # noqa: N802
@@ -110,7 +111,7 @@ def _ensure_vat(ctx: RunContext, p: Decimal) -> str:
 def _items_table_rect(ed: Snapshot, ctx: RunContext) -> Rect:
     """The Items NatTable: the largest scrollbar-only Pane to the right of the 'Items' label."""
     label = ed.one("Text", _L(ctx, "order_editor.items"))
-    panes = [n for n in ed.nodes if ed.is_leaf_pane(n) and n.rect.left >= label.rect.right - 4
+    panes = [n for n in ed.nodes if ed.is_leaf_pane(n, allow=INLINE_EDITORS) and n.rect.left >= label.rect.right - 4
              and n.rect.top <= label.rect.top + 12 and n.rect.bottom > label.rect.bottom + 40]
     if not panes:
         raise UIError("Items table not found right of the 'Items' label")
@@ -303,6 +304,13 @@ def _edit_cell(ctx: RunContext, table: Table, rect: Rect, idx: int, column: str,
         log.info("no inline Edit for %s in UIA; typing into the focused cell", column)
         keyboard.send_keys("^a" + value)
     keyboard.send_keys("{ENTER}")
+    # Live: after Enter the value was committed (line price updated) but the editor stayed open.
+    try:
+        wait_until(lambda: inline_editor() is None, 1.5, ctx.interval, desc="cell editor to close")
+    except Exception:  # noqa: BLE001
+        log.info("cell editor still open after Enter; closing it with Esc (value already committed)")
+        keyboard.send_keys("{ESC}")
+        wait_until(lambda: inline_editor() is None, ctx.timeout(), ctx.interval, desc="cell editor to close")
 
 
 def check_net_mode(ctx: RunContext) -> str:
