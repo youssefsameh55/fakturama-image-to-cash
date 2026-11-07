@@ -301,8 +301,22 @@ def _edit_cell(ctx: RunContext, table: Table, rect: Rect, idx: int, column: str,
     keyboard.send_keys("{ENTER}")
 
 
+def check_net_mode(ctx: RunContext) -> str:
+    """Line prices are compared as net: refuse to touch lines unless the order is in Net mode
+    (in Gross mode U.Price shows gross and a 'fix' would write the wrong price)."""
+    from i2c.flow.order import _price_mode_combo
+
+    ed = activate_editor(ctx, _L(ctx, "order_editor.tab"))
+    combo = _price_mode_combo(ed, ctx)
+    mode = get_value(combo.wrapper())
+    ctx.targets = [combo.rect]
+    if mode != _L(ctx, "order_editor.price_mode_net"):
+        raise UIError(f"order price mode is {mode!r}, expected Net (stage 'order' sets it)")
+    return "order is in Net mode"
+
+
 def make_steps(ctx_items: list[Item]) -> list[Step]:
-    steps = [Step("ensure_vats", ensure_vats)]
+    steps = [Step("check_net_mode", check_net_mode), Step("ensure_vats", ensure_vats)]
     for n, it in enumerate(ctx_items, 1):
         pos = it.position or n
         steps.append(Step(f"add_line_{pos}", make_add_line(it)))
