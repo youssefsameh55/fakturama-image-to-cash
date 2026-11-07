@@ -128,6 +128,13 @@ See `PLAN.md` §9 (G1–G6). Additional implementation decisions:
   character, both rows match, so the run stops for manual review.
 - **An existing VAT's code isn't re-checked.** The VATs list has no VAT-code column, so reuse
   checks Name and Value only. A newly created VAT always gets code S.
+- **Item-line cells are edited in place.** The run double-clicks the cell (column from the header
+  grid lines, row from the OCR box), types into the inline `Edit` that UIA exposes inside the table,
+  and presses Enter (then Esc if the editor stays open). Every value is checked by OCR. A line
+  discount is shown as negative ("-10.00 %"), so the check ignores its sign.
+- **Polling uses cheap reads.** While waiting for a cell value, the run does one OCR pass of the
+  already known table rectangle (about 0.1–0.2 s) instead of a full UIA walk of the window (about
+  1.5 s). The final verification still uses a stable double read.
 - **The unit ("pcs") is extracted but not entered.** Fakturama's item line has no unit field.
 - **The Debtor's payment method is on the Miscellaneous tab.** There is no Payment tab.
 

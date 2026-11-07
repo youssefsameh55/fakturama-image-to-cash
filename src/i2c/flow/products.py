@@ -27,7 +27,7 @@ from i2c.models import Item
 from i2c.ui.find import Snapshot
 from i2c.ui.geom import Rect
 from i2c.ui.input import click, get_value, select_combo, set_text
-from i2c.ui.table import Row, Table
+from i2c.ui.table import Row, Table, read_table
 from i2c.ui.wait import wait_until
 
 log = logging.getLogger(__name__)
@@ -108,20 +108,35 @@ def _ensure_vat(ctx: RunContext, p: Decimal) -> str:
 
 # ------------------------------------------------------------------ products + lines
 
-def _items_table_rect(ed: Snapshot, ctx: RunContext) -> Rect:
-    """The Items NatTable: the largest scrollbar-only Pane to the right of the 'Items' label."""
+def _items_table_node(ed: Snapshot, ctx: RunContext):  # noqa: ANN202 - find.Node
+    """The Items NatTable: the largest scrollbar-only Pane to the right of the 'Items' label
+    (an open inline cell editor inside it is tolerated)."""
     label = ed.one("Text", _L(ctx, "order_editor.items"))
     panes = [n for n in ed.nodes if ed.is_leaf_pane(n, allow=INLINE_EDITORS) and n.rect.left >= label.rect.right - 4
              and n.rect.top <= label.rect.top + 12 and n.rect.bottom > label.rect.bottom + 40]
     if not panes:
         raise UIError("Items table not found right of the 'Items' label")
-    return max(panes, key=lambda n: n.rect.area).rect
+    return max(panes, key=lambda n: n.rect.area)
+
+
+def _items_table_rect(ed: Snapshot, ctx: RunContext) -> Rect:
+    return _items_table_node(ed, ctx).rect
 
 
 def read_items(ctx: RunContext) -> tuple[Table, Rect]:
     ed = activate_editor(ctx, _L(ctx, "order_editor.tab"))
     rect = _items_table_rect(ed, ctx)
     return read_rect(ctx, rect, "items"), rect
+
+
+def _quick_read(ctx: RunContext, rect: Rect) -> Table:
+    """One OCR pass of a known rect (~0.1-0.2 s): used while polling for a value to appear.
+    No UIA walk, no stability wait - the final verification uses the stable read."""
+    table, _ = read_table(rect, ctx.settings.get("tables.items"),
+                          scale=float(ctx.settings.get("ocr.upscale", 1)),
+                          language=ctx.settings.get("ocr.language", "en-US"),
+                          row_tolerance=int(ctx.settings.get("ocr.row_merge_tolerance_px", 8)))
+    return table
 
 
 def _line_for(table: Table, sku: str) -> int | None:
@@ -243,24 +258,40 @@ def _expected(item: Item) -> dict[str, Decimal]:
             "Price": line_net(item.quantity, item.unit_net_price, item.discount_percent)}
 
 
+def _value_ok(column: str, cell: str | None, want: Decimal) -> bool:
+    """Numeric compare; Fakturama shows a line discount as negative ('-10.00 %', seen live)."""
+    if column == "Discount":
+        got = parse_decimal(cell)
+        return got is not None and abs(abs(got) - want) <= Decimal("0.005")
+    return _num_eq(cell, want)
+
+
 def _set_line(ctx: RunContext, item: Item) -> str:
     want = _expected(item)
     if any(v is None for v in want.values()):
         raise ManualReviewRequired(f"item {item.sku} has missing numbers: {want}", ctx.current_step)
+    ed = activate_editor(ctx, _L(ctx, "order_editor.tab"))     # one UIA walk per line, not per poll
+    node = _items_table_node(ed, ctx)
+    rect = node.rect
+    table = read_rect(ctx, rect, "items")
     for column in ("Qty.", "Discount", "U.Price"):
-        table, rect = read_items(ctx)
         idx = _line_for(table, item.sku)
         if idx is None:
-            raise UIError(f"item line {item.sku!r} disappeared")
-        if _num_eq(table.rows[idx].get(column), want[column]):
+            raise UIError(f"item line {item.sku!r} not in the Items table: {table.as_dicts()}")
+        if _value_ok(column, table.rows[idx].get(column), want[column]):
             continue
-        _edit_cell(ctx, table, rect, idx, column, _fmt(want[column]))
-        wait_until(lambda c=column: _num_eq(_cell(ctx, item.sku, c), want[c]), ctx.timeout(), ctx.interval,
-                   desc=f"{item.sku} {column} = {want[column]}")
+        _edit_cell(ctx, table, node, idx, column, _fmt(want[column]))
 
-    table, _ = read_items(ctx)
+        def shown(c: str = column) -> Table | None:
+            t = _quick_read(ctx, rect)
+            i = _line_for(t, item.sku)
+            return t if i is not None and _value_ok(c, t.rows[i].get(c), want[c]) else None
+
+        table = wait_until(shown, ctx.timeout(), 0.1, desc=f"{item.sku} {column} = {want[column]}")
+
+    table = read_rect(ctx, rect, "items")                        # final, stable read
     row = table.rows[_line_for(table, item.sku)]
-    diffs = {c: (row.get(c), str(v)) for c, v in want.items() if not _num_eq(row.get(c), v)}
+    diffs = {c: (row.get(c), str(v)) for c, v in want.items() if not _value_ok(c, row.get(c), v)}
     ctx.targets.append(row.rect)
     if diffs:
         raise UIError(f"line {item.sku} differs (shown, expected): {diffs}")
@@ -272,15 +303,10 @@ def _fmt(v: Decimal) -> str:
     return format(v.normalize(), "f")
 
 
-def _cell(ctx: RunContext, sku: str, column: str) -> str | None:
-    table, _ = read_items(ctx)
-    idx = _line_for(table, sku)
-    return None if idx is None else table.rows[idx].get(column)
-
-
-def _edit_cell(ctx: RunContext, table: Table, rect: Rect, idx: int, column: str, value: str) -> None:
+def _edit_cell(ctx: RunContext, table: Table, table_node, idx: int, column: str, value: str) -> None:  # noqa: ANN001
     """NatTable cell edit: double-click the cell (x from the header grid lines, y from the row's
-    OCR box), type, Enter. If an inline Edit appears in UIA it is typed into and read back."""
+    OCR box), type into the inline Edit (UIA exposes it inside the table pane, seen live),
+    Enter. The editor is looked up in the table pane's own small subtree (fast)."""
     from pywinauto import keyboard, mouse
 
     if column not in table.headers:
@@ -292,13 +318,12 @@ def _edit_cell(ctx: RunContext, table: Table, rect: Rect, idx: int, column: str,
     mouse.double_click(button="left", coords=(x, y))
 
     def inline_editor():  # noqa: ANN202
-        ed = ctx.editor(_L(ctx, "order_editor.tab"))
-        new = [n for n in ed.find("Edit") if rect.contains_point(*n.rect.center)]
-        return new[0] if new else None
+        found = Snapshot.take(table_node.info, max_depth=4).find("Edit")
+        return found[0] if found else None
 
     try:
-        node = wait_until(inline_editor, 1.5, ctx.interval, desc="inline cell editor")
-        set_text(node.wrapper(), value, methods=("keys",), normalize=lambda s: str(parse_decimal(s)))
+        editor = wait_until(inline_editor, 1.5, 0.1, desc="inline cell editor")
+        set_text(editor.wrapper(), value, methods=("keys",), normalize=lambda s: str(parse_decimal(s)))
         log.info("edited %s via inline Edit (UIA)", column)
     except Exception:  # noqa: BLE001 - no UIA editor: type blind, verified by OCR afterwards
         log.info("no inline Edit for %s in UIA; typing into the focused cell", column)
@@ -306,11 +331,11 @@ def _edit_cell(ctx: RunContext, table: Table, rect: Rect, idx: int, column: str,
     keyboard.send_keys("{ENTER}")
     # Live: after Enter the value was committed (line price updated) but the editor stayed open.
     try:
-        wait_until(lambda: inline_editor() is None, 1.5, ctx.interval, desc="cell editor to close")
+        wait_until(lambda: inline_editor() is None, 1.0, 0.1, desc="cell editor to close")
     except Exception:  # noqa: BLE001
         log.info("cell editor still open after Enter; closing it with Esc (value already committed)")
         keyboard.send_keys("{ESC}")
-        wait_until(lambda: inline_editor() is None, ctx.timeout(), ctx.interval, desc="cell editor to close")
+        wait_until(lambda: inline_editor() is None, ctx.timeout(), 0.1, desc="cell editor to close")
 
 
 def check_net_mode(ctx: RunContext) -> str:

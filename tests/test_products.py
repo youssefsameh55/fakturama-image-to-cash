@@ -48,3 +48,12 @@ def test_items_table_found_right_of_label():
 def test_steps_follow_source_order():
     names = [s.name for s in make_steps(ORDER.items)]
     assert names == ["check_net_mode", "ensure_vats", "add_line_1", "set_line_1", "add_line_2", "set_line_2"]
+
+
+def test_line_value_compare_discount_sign():
+    from i2c.flow.products import _value_ok
+    assert _value_ok("Discount", "-10.00 %", Decimal("10"))      # seen live
+    assert _value_ok("Discount", "0.00 %", Decimal("0"))
+    assert not _value_ok("Discount", "-5.00 %", Decimal("10"))
+    assert _value_ok("Price", "$450.00", Decimal("450.00"))
+    assert not _value_ok("Price", "$500.00", Decimal("450.00"))
