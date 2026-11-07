@@ -123,6 +123,9 @@ See `PLAN.md` §9 (G1–G6). Additional implementation decisions:
 - **Truncated table cells** ("Northstar Offic...", and its OCR variants such as
   "Northstar Office . „") match when the source value starts with the visible text (at least 4
   characters). If two rows could match that way, the run stops for manual review.
+- **Item numbers are compared with OCR look-alikes folded on both sides** (O/0, I/l/1, S/5, B/8,
+  Z/2). Live, OCR read "CHR-ERG-01" as "CHR-ERG-OI". If two real SKUs differ only by such a
+  character, both rows match, so the run stops for manual review.
 - **An existing VAT's code isn't re-checked.** The VATs list has no VAT-code column, so reuse
   checks Name and Value only. A newly created VAT always gets code S.
 - **The unit ("pcs") is extracted but not entered.** Fakturama's item line has no unit field.

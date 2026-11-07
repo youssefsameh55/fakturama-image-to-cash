@@ -52,6 +52,20 @@ def cell_matches(cell: object, want: object) -> bool:
     return len(visible) >= MIN_VISIBLE_PREFIX and w.startswith(visible)
 
 
+_LOOKALIKES = str.maketrans({"O": "0", "Q": "0", "D": "0", "I": "1", "L": "1", "|": "1", "!": "1",
+                             "S": "5", "B": "8", "Z": "2"})
+
+
+def code_matches(cell: object, want: object) -> bool:
+    """Identifier comparison (SKUs) tolerant to OCR look-alikes, applied to BOTH sides:
+    'CHR-ERG-OI' (OCR, seen live) == 'CHR-ERG-01'. Two real codes differing only by a
+    look-alike would both match -> AMBIGUOUS -> manual review, never a silent pick."""
+    if cell_matches(cell, want):
+        return True
+    canon = lambda v: norm(v).upper().replace(" ", "").translate(_LOOKALIKES)  # noqa: E731
+    return bool(norm(cell)) and canon(cell) == canon(want)
+
+
 def _eq(a: object, b: object) -> bool:
     """a = cell text from a table, b = source value."""
     return cell_matches(a, b)
@@ -99,7 +113,7 @@ def match_product(rows: list[dict[str, str]], sku: str, description: str | None 
                   sku_column: str = "Item No.", description_column: str = "Name") -> MatchResult:
     """EXACT = Item number equal. Duplicate SKU rows -> AMBIGUOUS. A differing description is
     reported in `reason` (the caller decides warn vs stop, settings matching.product_description_mismatch)."""
-    same = [i for i, r in enumerate(rows) if _eq(r.get(sku_column), sku)]
+    same = [i for i, r in enumerate(rows) if code_matches(r.get(sku_column), sku)]
     if not same:
         return MatchResult(Outcome.NONE, reason=f"no product with item number {sku!r}")
     if len(same) > 1:

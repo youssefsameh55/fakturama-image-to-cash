@@ -22,7 +22,7 @@ from i2c.flow.common import (activate_editor, cancel_dialog, open_selector, open
                              pick_row_and_ok, read_rect, read_view_table, save_once, search_selector)
 from i2c.flow.context import RunContext
 from i2c.flow.runner import Step
-from i2c.match import Outcome, cell_matches, match_by_name, match_product
+from i2c.match import Outcome, code_matches, match_by_name, match_product
 from i2c.models import Item
 from i2c.ui.find import Snapshot
 from i2c.ui.geom import Rect
@@ -124,7 +124,7 @@ def read_items(ctx: RunContext) -> tuple[Table, Rect]:
 
 
 def _line_for(table: Table, sku: str) -> int | None:
-    hits = [i for i, r in enumerate(table.rows) if cell_matches(r.get("Item No."), sku)]
+    hits = [i for i, r in enumerate(table.rows) if code_matches(r.get("Item No."), sku)]
     if len(hits) > 1:
         raise UIError(f"{len(hits)} item lines with item number {sku!r}")
     return hits[0] if hits else None

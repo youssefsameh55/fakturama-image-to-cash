@@ -83,3 +83,15 @@ def test_order_address_box_check():
     _expect_address(box, delivery, "Northstar Office GmbH", "delivery")
     with pytest.raises(UIError):
         _expect_address(box, DEBTOR.billing_address, "Northstar Office GmbH", "invoice")  # wrong street/ZIP
+
+
+def test_sku_ocr_lookalikes():
+    from i2c.match import code_matches
+    assert code_matches("CHR-ERG-OI", "CHR-ERG-01")            # seen live
+    assert code_matches("MAT-DESK-O2", "MAT-DESK-02")
+    assert not code_matches("CHR-ERG-02", "CHR-ERG-01")
+    assert not code_matches("", "CHR-ERG-01")
+    rows = [{"Item No.": "CHR-ERG-OI", "Name": "Ergonomic Des..."}]
+    assert match_product(rows, "CHR-ERG-01", "Ergonomic Desk Chair").outcome is Outcome.EXACT
+    two = rows + [{"Item No.": "CHR-ERG-01", "Name": "Other"}]
+    assert match_product(two, "CHR-ERG-01").outcome is Outcome.AMBIGUOUS
