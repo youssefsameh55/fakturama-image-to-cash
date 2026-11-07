@@ -292,22 +292,31 @@ def select_created_debtor(ctx: RunContext) -> str:
 
 def verify_order_addresses(ctx: RunContext) -> str:
     d = ctx.order.debtor
-    ed = activate_editor(ctx, _L(ctx, "order_editor.tab"))
+    editor = ctx.results.get("order_tab") or _L(ctx, "order_editor.tab")
+    activate_editor(ctx, editor)
     invoice_tab = _L(ctx, "order_editor.invoice_address_tab")
+    show_address_tab(ctx, editor, invoice_tab)
     # The box is filled asynchronously after the dialog closes: wait for text, not just once.
-    text = wait_until(lambda: _address_box_text(ctx, ctx.editor(_L(ctx, "order_editor.tab")), invoice_tab).strip(),
+    text = wait_until(lambda: _address_box_text(ctx, ctx.editor(editor), invoice_tab).strip(),
                       ctx.timeout(), ctx.interval, desc="order invoice address to be filled")
-    ed = ctx.editor(_L(ctx, "order_editor.tab"))
+    ed = ctx.editor(editor)
     _expect_address(text, d.billing_address, d.company, "invoice")
     checked = ["invoice"]
     if not d.delivery_same_as_billing:
         tab = _L(ctx, "order_editor.delivery_address_tab")
         if not ed.find("TabItem", name=tab) and not ed.find("Tab", name=tab):
             raise UIError(f"order has no {tab!r} tab although the debtor has a delivery address")
-        ed = activate_subtab(ctx, _L(ctx, "order_editor.tab"), tab, lambda s: bool(s.find("Tab", name=tab)))
+        ed = show_address_tab(ctx, editor, tab)
         _expect_address(_address_box_text(ctx, ed, tab), d.delivery_address, d.company, "delivery")
         checked.append("delivery")
+        show_address_tab(ctx, editor, invoice_tab)    # leave the order as a user would: invoice tab in front
     return f"order shows the source {' and '.join(checked)} address"
+
+
+def show_address_tab(ctx: RunContext, editor: str, tab_name: str) -> Snapshot:
+    """Bring the order's/invoice's 'Invoice address' or 'Delivery address' tab to the front
+    (the debtor stage leaves the Delivery tab showing - seen live)."""
+    return activate_subtab(ctx, editor, tab_name, lambda s: bool(s.find("Tab", name=tab_name)))
 
 
 def _address_box_text(ctx: RunContext, ed: Snapshot, tab_name: str) -> str:

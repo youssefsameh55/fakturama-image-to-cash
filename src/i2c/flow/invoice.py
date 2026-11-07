@@ -13,7 +13,7 @@ import logging
 from i2c.errors import ManualReviewRequired, UIError
 from i2c.flow.common import activate_editor, save_once
 from i2c.flow.context import RunContext
-from i2c.flow.debtor import _address_box_text, _expect_address
+from i2c.flow.debtor import _address_box_text, _expect_address, show_address_tab
 from i2c.flow.order import _price_mode_combo
 from i2c.flow.runner import Step
 from i2c.flow.save_order import check_document, find_document, verify_lines, verify_totals
@@ -70,8 +70,10 @@ def check_invoice(ctx: RunContext) -> str:
         problems.append(f"VAT mode {vat_mode!r}")
     if problems:
         raise ManualReviewRequired(f"invoice header not copied from the order: {problems}", ctx.current_step)
-    _expect_address(_address_box_text(ctx, ed, _L(ctx, "order_editor.invoice_address_tab")),
-                    o.debtor.billing_address, o.debtor.company, "invoice")
+    inv_tab = _L(ctx, "order_editor.invoice_address_tab")
+    ed = show_address_tab(ctx, invoice_tab(ctx), inv_tab)
+    _expect_address(_address_box_text(ctx, ed, inv_tab), o.debtor.billing_address, o.debtor.company, "invoice")
+    ed = _editor(ctx)
     lines = verify_lines(ctx, ed)
     shown = verify_totals(ctx, _editor(ctx))
     return (f"copied from order: Cust.Ref., Order Date {o.order_date}, Net / With VAT, invoice address, "

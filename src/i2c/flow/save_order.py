@@ -93,6 +93,9 @@ def save_order(ctx: RunContext) -> str:
     snap = ctx.snapshot()
     before = {n.name for n in snap.find("TabItem")}
     activate_editor(ctx, order_tab(ctx))
+    if not ctx.results.get("order_no"):        # started mid-way (--start-at): read it from the editor
+        ctx.results["order_no"] = get_value(ctx.editor(order_tab(ctx)).by_label(
+            _L(ctx, "order_editor.number"), ["Edit"]).wrapper()).strip()
     save_once(ctx, f"order {ctx.results.get('order_no')}")
 
     def renamed() -> str | None:

@@ -44,10 +44,42 @@ def save_once(ctx: RunContext, what: str) -> None:
     if not save.enabled:
         raise UIError(f"Save is disabled before saving {what}: nothing was changed?")
     ctx.targets.append(save.rect)
+    dialogs_before = _child_windows(ctx)
     click(save.wrapper())
-    wait_until(lambda: not save_enabled(ctx), ctx.timeout("save"), ctx.interval,
-               desc=f"{what} to be saved (Save disabled again)")
+
+    def saved_or_error() -> str | None:
+        new = _child_windows(ctx) - dialogs_before
+        if new:                                  # Fakturama reports save problems in a dialog
+            return "dialog:" + "; ".join(sorted(new))
+        return "saved" if not save_enabled(ctx) else None
+
+    outcome = wait_until(saved_or_error, ctx.timeout("save"), ctx.interval,
+                         desc=f"{what} to be saved (Save disabled again)")
+    if outcome != "saved":
+        texts = _dialog_texts(ctx, dialogs_before)
+        raise UIError(f"Fakturama showed a dialog while saving {what}: {outcome[7:]} {texts}")
     log.info("saved %s", what)
+
+
+def _child_windows(ctx: RunContext) -> set[str]:
+    """Titles of dialog windows owned by Fakturama (children of the main window)."""
+    main = ctx.app.main
+    try:
+        return {c.name or "<untitled>" for c in main.element_info.children() if c.control_type == "Window"}
+    except Exception:  # noqa: BLE001
+        return set()
+
+
+def _dialog_texts(ctx: RunContext, before: set[str]) -> list[str]:
+    out: list[str] = []
+    try:
+        for c in ctx.app.main.element_info.children():
+            if c.control_type == "Window" and (c.name or "<untitled>") not in before:
+                snap = ctx.app.snapshot(c, max_depth=8)
+                out += [n.name for n in snap.find("Text") if n.name][:6]
+    except Exception:  # noqa: BLE001
+        pass
+    return out
 
 
 def tab_bar_rect(snap: Snapshot, item) -> Rect:  # noqa: ANN001 - find.Node

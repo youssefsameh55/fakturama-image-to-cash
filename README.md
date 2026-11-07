@@ -151,6 +151,12 @@ See `PLAN.md` §9 (G1–G6). Additional implementation decisions:
   already known table rectangle (about 0.1–0.2 s) instead of a full UIA walk of the window (about
   1.5 s). The final verification still uses a stable double read.
 - **The unit ("pcs") is extracted but not entered.** Fakturama's item line has no unit field.
+- **Fakturama save errors are detected, and one was traced to Fakturama itself.** If a dialog
+  appears after Save, the run stops and reports its text instead of waiting. In one live session
+  the order editor failed to save with `NullPointerException ... DocumentEditor.doSave
+  (DocumentEditor.java:412)` (from `~/.fakturama2/.metadata/.log`). That editor had had item
+  lines deleted and re-added by hand several times; the order's data had passed every check. A
+  fresh order without manual edits saved normally (see the end-to-end run).
 - **The Debtor's payment method is on the Miscellaneous tab.** There is no Payment tab.
 
 ## Skipped / not implemented
