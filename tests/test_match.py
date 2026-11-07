@@ -71,3 +71,15 @@ def test_truncation_junk_from_ocr():
     assert cell_matches("Northstar Office GmbH.", "Northstar Office GmbH")
     assert not cell_matches("Northstar Office", "Northstar Office GmbH")   # no truncation mark
     assert not cell_matches("Acme . „", "Northstar Office GmbH")
+
+
+def test_order_address_box_check():
+    import pytest
+    from i2c.errors import UIError
+    from i2c.flow.debtor import _expect_address
+    box = "Northstar Office GmbH\r\nMarta Klein\r\nBeusselstrasse 44\r\nDE-10553 Berlin\r\nGermany"  # live
+    delivery = Address(name="Northstar Office Warehouse", street="Beusselstrasse 44", zip="10553",
+                       city="Berlin", country="Germany")
+    _expect_address(box, delivery, "Northstar Office GmbH", "delivery")
+    with pytest.raises(UIError):
+        _expect_address(box, DEBTOR.billing_address, "Northstar Office GmbH", "invoice")  # wrong street/ZIP

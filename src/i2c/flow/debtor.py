@@ -305,7 +305,7 @@ def verify_order_addresses(ctx: RunContext) -> str:
         if not ed.find("TabItem", name=tab) and not ed.find("Tab", name=tab):
             raise UIError(f"order has no {tab!r} tab although the debtor has a delivery address")
         ed = activate_subtab(ctx, _L(ctx, "order_editor.tab"), tab, lambda s: bool(s.find("Tab", name=tab)))
-        _expect_address(_address_box_text(ctx, ed, tab), d.delivery_address, None, "delivery")
+        _expect_address(_address_box_text(ctx, ed, tab), d.delivery_address, d.company, "delivery")
         checked.append("delivery")
     return f"order shows the source {' and '.join(checked)} address"
 
@@ -322,9 +322,13 @@ def _address_box_text(ctx: RunContext, ed: Snapshot, tab_name: str) -> str:
 
 
 def _expect_address(text: str, addr: Address | None, company: str | None, which: str) -> None:
+    """The order's address box is a formatted block, e.g. (seen live)
+    'Northstar Office GmbH / Marta Klein / Beusselstrasse 44 / DE-10553 Berlin / Germany'.
+    It shows company, contact, street, ZIP (country-prefixed), city and country - but not the
+    address's 'additional name' - so exactly those parts are compared."""
     flat = norm(text)
-    parts = [company, addr.name if addr else None, addr.street if addr else None,
-             addr.zip if addr else None, addr.city if addr else None]
+    parts = [company, addr.street if addr else None, addr.zip if addr else None,
+             addr.city if addr else None, addr.country if addr else None]
     missing = [p for p in parts if p and norm(p) not in flat]
     if not flat or missing:
         raise UIError(f"order {which} address {text!r} lacks {missing}")
