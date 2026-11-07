@@ -23,6 +23,9 @@ conflicting stops the run for manual review and leaves Fakturama as it is.
 | M7 Stages `save_order` + `invoice` | done, verified live |
 | **End-to-end run** | **`status: ok` in 63.5 s** (run `20261107-054628`: PO000008 + INV000006, paid, all entities *selected*) |
 | M8 Deliverables | README done, `DESIGN.md` drafted; screen recording pending |
+| Launcher window (`Launch.bat` / `python -m i2c gui`) | done: pick an image, Start/Stop, live log |
+| Recreating deleted master data | verified live: run `20261107-191020` recreated a deleted "Bank Transfer" for an existing Debtor (77.8 s, `status: ok`); run `20261107-190424` recreated both deleted products |
+| Extra samples `order_02.png`, `order_03.png` | generated (`tools/make_samples.py`); **not yet run against Fakturama** |
 
 Latest end-to-end timing (second run on the same image, so all master data is selected):
 
@@ -41,7 +44,8 @@ Latest end-to-end timing (second run on the same image, so all master data is se
 ```
 
 The *create* paths (new Debtor with two addresses, new payment method, new VAT, new products)
-were verified live in earlier runs of the same stages.
+were verified live in earlier runs of the same stages, and again after deleting the master data
+by hand (see the Status table).
 
 ## Setup
 
@@ -58,7 +62,18 @@ copy .env.example .env   # then set ANTHROPIC_API_KEY, or GEMINI_API_KEY with LL
 Start Fakturama, maximize it, close any open editor tabs, and don't touch mouse or keyboard
 during a run. The automation must run at the same privilege level as Fakturama.
 
+Run every command below with the venv's Python: activate it first (`.\.venv\Scripts\Activate.ps1`)
+or call `.venv\Scripts\python` directly. The system `python` gives `No module named i2c`.
+
 ## Usage
+
+**Launcher window:** double-click `Launch.bat` (or run `python -m i2c gui`), pick an order image and
+press **Start**. It runs the same `python -m i2c run <image>` as below in a subprocess, shows its log
+live, minimizes itself during the run so it doesn't cover Fakturama, and shows the result in colour
+(done / manual review / error). **Stop** ends the run and leaves Fakturama as it is; **Open last run
+folder** opens the newest `artifacts/<run-id>/`.
+
+**Command line:**
 
 ```powershell
 python -m i2c run samples/order_01.png                  # full flow (extraction cached after the first call)
@@ -71,10 +86,20 @@ python -m i2c run --from-json <json> --start-at save_order    # continue in the 
 python tools/dump_tree.py --window ".*Fakturama.*" --delay 5 --out artifacts/probe/<name>  # UIA probe
 python tools/read_table.py --view "VATs" --kind vats          # read one table via UIA rect + OCR
 python tools/bench_uia.py                                     # read-only cost of UIA access strategies
+python tools/make_samples.py                                  # re-render samples/order_02.png, order_03.png
 pytest -q                                                      # 129 offline tests
 ```
 
 Stages, in order: `order`, `debtor`, `products`, `save_order`, `invoice`.
+
+Samples: `order_01.png` is the brief's image. `order_02.png` and `order_03.png` are generated in the
+same layout (amounts computed with Decimal, so every total is consistent):
+
+| Sample | Debtor | Products / VAT | Payment | Paths it exercises |
+|---|---|---|---|---|
+| `order_01` | Northstar Office GmbH (two addresses) | CHR-ERG-01, MAT-DESK-02, 19 % | Bank Transfer, PAID | the brief's case |
+| `order_02` | Bluewave Studio GmbH (new, one address) | 3 new SKUs, one at **7 %** | **Credit Card**, PAID | create Debtor, payment method, VAT, products; 3 lines |
+| `order_03` | Northstar (existing) | 2 existing + 1 new SKU, 19 % | Bank Transfer, **UNPAID** | select paths, mixed products, unpaid Invoice |
 Exit codes: 0 ok · 2 usage · 3 manual review · 4 error.
 
 ### What a run produces
@@ -125,6 +150,10 @@ Further decisions:
   - Only validated results are cached, and a cached result is re-validated on read.
   - A forced tool call is used, falling back to `tool_choice=auto` for models that reject it.
 - **VAT tolerance** is ±0.01 per line (Fakturama may round VAT per line).
+- **New products are opened from the top toolbar** ("Create a new product"), not from the left
+  panel's "New product" link. Found in a live test: once the VATs view had been opened from the left
+  panel, clicking that link no longer opened the editor (probably because the panel switches to
+  another group). New Debtors still use the left panel's "New Contact"; see "Skipped".
 - **The payment method is checked on every run** and created if it is missing, even when the Debtor
   already exists, because the Invoice needs it too. Found in a live test: after "Bank Transfer" was
   deleted, a run with an existing Debtor stopped at the Invoice. When a Debtor is created, the method
@@ -217,17 +246,24 @@ Further decisions:
 - **An existing VAT's code (S) isn't re-checked:** the VATs list has no code column. New VATs get code S.
 - **The negative test** (same company, different ZIP → manual review) is unit-tested on the matcher
   but hasn't been run against Fakturama.
+- **`order_02` and `order_03` haven't been run against Fakturama yet.** Untested live: creating a
+  7 % VAT, creating "Credit Card", a 3-line order and the UNPAID Invoice path.
+- **"New Contact" is still clicked in the left panel.** When a payment method is created first
+  (order_02), it may hit the same problem as "New product" did. The toolbar alternative is a split
+  button whose behaviour hasn't been probed yet.
+- **No resume after a manual-review stop:** a stopped run is finished by hand, or re-run after the
+  cause is fixed (`--start-at` exists for development only).
 - **No scrolling in tables:** only visible rows are read. Searches narrow the lists down, and the
-  sample has 2 lines.
+  samples have at most 3 lines.
 - **Launching Fakturama** is out of scope (it must be running, English UI, maximized).
-- **Only the sample order was run.** No photos or skewed scans were tried.
+- **No photos or skewed scans were tried**, only rendered images.
 - **Test data:** the development database contains several test orders and invoices
-  (PO000001–PO000008, INV000001–INV000006, one incomplete PO000002).
+  (PO000001–PO000013, INV000001–INV000009, some left incomplete by stopped test runs).
 
 ## If I had 3 more hours
 
 1. **A recorded clean run on a fresh database** (all create paths), then the same image again (all
-   select paths), plus the negative ZIP-conflict test.
+   select paths), plus the negative ZIP-conflict test and live runs of `order_02` / `order_03`.
 2. **Less OCR in verification:** reopen saved documents and read their fields via UIA, keeping OCR
    for choosing rows only.
 3. **Table scrolling** for long orders and large lists.

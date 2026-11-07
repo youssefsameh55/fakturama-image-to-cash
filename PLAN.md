@@ -3,6 +3,9 @@
 LLM-first extraction; Windows OCR used only for reading Fakturama's custom-drawn tables.
 OCR-based image extraction is a stretch goal (`EXTRACTOR=ocr|auto`) only if time remains.
 
+> **Updated 2026-11-07 to match the final code.** Where the implementation differs from the
+> original plan, the text below describes what the code does; §14 lists every change and why.
+
 ---
 
 ## 0. Goal & deliverables
@@ -86,8 +89,8 @@ artifacts/<run-id>/   extracted.json, run.log, NN_step.png, summary.json
 | D6 | Cache | key = sha256(image) + provider + model + PROMPT_VERSION in `.cache/extractions/` | Zero tokens on dev re-runs |
 | D7 | Control grounding | UIA (type + name/label) → Windows OCR inside UIA-obtained rect → stop | No coordinates, resolution-independent |
 | D8 | Tables (NatTable) | OCR of the table rect; click row via OCR word box centre | NatTable likely opaque to UIA (confirm by probe) |
-| D9 | Sync | `wait_until(cond, timeout, interval)`; table "stable" = 2 identical OCR reads | Fast and robust |
-| D10 | Input | UIA ValuePattern set → fallback click+type; always read back | Every input verified |
+| D9 | Sync | `wait_until(cond, timeout, interval)`, polling every 0.1 s; table "stable" = 2 identical OCR reads | Fast and robust |
+| D10 | Input | Real keystrokes with proven keyboard focus (UIA ValuePattern only as fallback); dates by arrow keys per field; always read back | ValuePattern text showed on screen but saved empty (§14) |
 | D11 | Flow structure | Steps as functions (action + verify) run by a runner | "Verify each step" is structural |
 | D12 | Errors | `ManualReviewRequired(reason, step, screenshot)` → summary, app left as-is | Matches brief |
 | D13 | Evidence | Annotated screenshot per step (target outlined + caption) | Deliverable + debugging |
@@ -195,15 +198,18 @@ Derived: product gross prices CHR-ERG-01 = 297.50, MAT-DESK-02 = 47.60.
 
 ## 6. UI layer (`ui/`)
 
-- `app.py` — attach to running Fakturama (title regex) or launch; focus, maximise; DPI awareness.
+- `app.py` — attach to the running Fakturama (title regex); focus, maximise; DPI awareness.
+  Launching Fakturama is out of scope.
 - `find.py` — by control type + name; by label adjacency (Edit right of / below Text "Cust.Ref.");
   toolbar/left-panel buttons by name or tooltip; tabs by name. Returns pywinauto wrappers.
 - `wait.py` — `wait_until(cond, timeout, interval)`; `wait_window`, `wait_editor_tab`,
   `wait_table_stable`.
 - `input.py` — `set_text`, `select_combo(exact_text)`, `set_checkbox`, `set_date` — all read back.
-- `ocr.py` — Windows OCR on a screen rect → words with boxes (upscale 2× before OCR).
-- `table.py` — header-anchored column ranges; words grouped into rows by y; returns
-  `[{col: text}]` with each row's screen rect. Pure grouping logic is unit-tested offline.
+- `ocr.py` — Windows OCR on a screen rect → words with boxes. No upscaling (`ocr.upscale: 1`):
+  2× made OCR worse on a high-DPI screen.
+- `table.py` — column ranges from the header's grid lines; headers fuzzy-matched to configured
+  names; words grouped into rows by y; dropped cells re-read with the column header as context;
+  returns `[{col: text}]` with each row's screen rect. Pure logic is unit-tested offline.
 - `evidence.py` — window capture, outline target rect, caption, save `NN_<step>.png`.
 
 **Probe tool `tools/dump_tree.py`:** for a window matching a title regex (or `--list` to show all
@@ -220,6 +226,7 @@ Data > VATs + its editor · New Product · Data > Documents · Invoice editor (+
 ## 7. Flow spec (maps to the brief's steps)
 
 ### Stage `order` — Extract & open Order (1.1–1.8)
+Steps: `open_order`, `set_header`, `set_modes`, `verify_header`.
 1. Extract → `OrderData`.
 2. Toolbar **Order** → wait New Order editor. ✔ editor open, No. non-empty (record it).
 3. Leave No.; set **Date** = order date; **Cust.Ref.** = external reference.
@@ -227,6 +234,16 @@ Data > VATs + its editor · New Product · Data > Documents · Invoice editor (+
 5. Keep this Order tab open throughout.
 
 ### Stage `debtor` — Select or create Debtor (2.1–2.13)
+Steps: `find_debtor`, `ensure_payment_method`, `create_debtor`, `select_created_debtor`,
+`verify_addresses`.
+
+**Payment method (every run, before any Debtor editor is opened):** Data > terms of payment →
+read the list → one exact → use; multiple/conflict → stop; none → green + : Name = Description =
+method; Account blank; code mapping (Bank Transfer → Credit transfer; Credit Card → Credit card;
+SEPA Direct Debit → SEPA direct debit); Cash discount / Discount Days / Net Days = 0; Text
+'unpaid'/'deposit'/'paid' blank; do NOT set as standard → Save once → ✔ listed. It runs even
+when the Debtor exists, because the Invoice needs the method too (§14).
+
 1. Click **upper existing-contact icon** beside Addresses (never the green +).
 2. **Select the address**: search company → wait stable → OCR rows → `match_debtor`.
    - EXACT(1 row) → select → OK → ✔ Invoice & Delivery addresses equal source.
@@ -239,44 +256,50 @@ Data > VATs + its editor · New Product · Data > Documents · Invoice editor (+
         (+ Delivery address if identical).
      4. Delivery differs (sample case) → add second address with Delivery address role (G1).
      5. Miscellaneous: Alias name, Discount 0%, Net or Gross = Net.
-     6. Payment: select exact method; if unavailable → **payment-method branch** (2.10.1–2.10.6):
-        Data > terms of payment → search exact → one exact → use; multiple/conflict → stop;
-        none → green + : Name = Description = method; Account blank;
-        code mapping (Bank Transfer → Credit transfer; Credit Card → Credit card;
-        SEPA Direct Debit → SEPA direct debit); Cash discount / Discount Days / Net Days = 0;
-        Text 'unpaid'/'deposit'/'paid' blank; do NOT set as standard → Save once → back to Debtor
-        editor → select new method.
+     6. Payment method (Miscellaneous tab): select the exact method, which the payment-method
+        step above has already ensured exists.
      7. Save Debtor once.
      8. Back to Order → reopen Select the address → search → select new Debtor → OK.
    - ✔ Order Invoice/Delivery address populated & equal source (also proves the Debtor saved).
 
 ### Stage `products` — per item, in source order (3.1–3.17)
+Steps: `check_net_mode`, `ensure_vats` (every distinct VAT rate of the order, before any line),
+then per item `add_line_N` (select or create the product) and `set_line_N`.
+
 1. **Upper Product-selection icon** beside Items (never green +).
 2. **Select a product**: search exact SKU → OCR → `match_product`.
    EXACT → select → OK. CONFLICT → stop. NONE → Cancel →
-3. **VAT** (3.4–3.6): Data > VATs → search `VAT <p>%`. Reuse only if Name, Value, and VAT code
-   (E-Invoice) = S all match; any conflict → stop. Missing → green + : Name = Description =
-   `VAT <p>%`, code S, Value = p, leave Standard VAT unchanged → Save once.
-4. **New product** (only after VAT exists): Item Number = SKU; Name = Description = description;
+3. **VAT** (3.4–3.6, done up front by `ensure_vats`): Data > VATs → find `VAT <p>%`. Reuse if
+   Name and Value match (the VATs list shows no code column, so an existing VAT's code isn't
+   re-checked); conflict → stop. Missing → green + : Name = Description = `VAT <p>%`, code S,
+   Value = p, leave Standard VAT unchanged → Save once.
+4. **New product** (opened with the top-toolbar button "Create a new product", not the left
+   panel; only after VAT exists): Item Number = SKU; Name = Description = description;
    Price (gross) = `product_gross_price`; cost price (net) 0.00; VAT = exact VAT; Stock 0.00;
    leave Category, GTIN, supplier code, allowance, picture, user field 1 untouched → Save once.
 5. Back to Order → reopen Select a product → search SKU → select → OK. Not found → stop.
+   ("Select a product" may pick a typed SKU by itself and close; accepted only if exactly one line
+   for that SKU appears.)
 6. **Line**: Qty = quantity; ✔/set U.Price = unit net, VAT = p; Discount = item discount;
    ✔ line Price = `line_net` (OCR the Items row).
 
 ### Stage `save_order` — Complete & save Order (4.1–4.7)
+Steps: `check_order`, `save_order`, `verify_in_documents`, `create_invoice`.
 1. ✔ addresses and all lines vs source.
 2. Overall Discount 0%; Shipping = Free of shipping costs / 0.00.
 3. ✔ Total Net, VAT, Total = source totals (±0.01).
 4. Save once.
-5. Data > Documents → find Order row by number ✔ Date, Cust.Ref., open state, Total.
+5. Data > Documents → search by Order number (view maximized while read, then restored) ✔ Date,
+   Cust.Ref., open state, Total.
 6. In the saved Order: **Create a follow-up document → Invoice** (NOT toolbar Invoice) → wait
    New Invoice editor.
 
 ### Stage `invoice` — Complete & verify Invoice (5.1–5.7)
+Steps: `check_invoice`, `set_payment`, `save_invoice`, `verify_documents`.
 1. Leave Invoice No., Invoice Date, Service date. ✔ copied Cust.Ref., Invoice/Delivery address,
    Order Date, VAT mode, lines, totals.
-2. Payment method = extracted method; unavailable → stop.
+2. Payment method = extracted method (ensured to exist by the `debtor` stage); still unavailable
+   in the combo → stop.
 3. PAID → tick paid, payment date = extracted date, Value = Invoice total. Else leave clear,
    invent nothing.
 4. Save once.
@@ -297,7 +320,7 @@ Normalisation: Unicode NFKC, trim, collapse whitespace, casefold. Money as Decim
 |---|---|---|---|
 | Debtor | company | Company + First Name + Name + ZIP + City equal | same company but other key fields differ; >1 exact |
 | Product | SKU | Item number equal | duplicate SKU rows; description differs (warn by default, configurable to stop) |
-| VAT | `VAT p%` | Name + Value + code S | name matches but value/code differ |
+| VAT | `VAT p%` | Name + Value (code not shown in the list) | name matches but value differs |
 | Payment method | name | Name equal | multiple equal rows; differing definition |
 
 Result type: `NONE | EXACT(row) | AMBIGUOUS | CONFLICT`. Fully unit-tested.
@@ -320,34 +343,44 @@ Result type: `NONE | EXACT(row) | AMBIGUOUS | CONFLICT`. Fully unit-tested.
 
 ```
 fakturama-image-to-cash/
-├─ README.md  DESIGN.md  PLAN.md  CLAUDE.md
+├─ README.md  DESIGN.md  PLAN.md  CLAUDE.md  Launch.bat
 ├─ pyproject.toml  requirements.txt  .env.example  .gitignore
 ├─ config/settings.yaml
-├─ samples/order_01.png
-├─ tools/dump_tree.py
+├─ samples/order_01.png  order_02.png  order_03.png
+├─ tools/dump_tree.py  read_table.py  bench_uia.py  make_samples.py
 ├─ src/i2c/
-│  ├─ __main__.py  main.py     # CLI: extract | probe | run [--from-json] [--stop-after STAGE]
-│  ├─ models.py  calc.py  match.py  errors.py  config.py  logging_setup.py
+│  ├─ __main__.py  main.py     # CLI: extract | run [--from-json] [--stop-after|--start-at STAGE] | gui
+│  ├─ gui.py                   # launcher window (runs `i2c run` as a subprocess)
+│  ├─ models.py  calc.py  match.py  errors.py  config.py  logging_setup.py  perf.py
 │  ├─ extract/  prompt.py  schema.py  providers.py  validate.py  cache.py  service.py
-│  ├─ ui/       app.py  find.py  wait.py  input.py  ocr.py  table.py  evidence.py
-│  └─ flow/     context.py  runner.py  order.py  debtor.py  payment_method.py
-│               vat.py  product.py  lines.py  invoice.py  verify.py
-├─ tests/  test_calc.py  test_validate.py  test_match.py  test_table.py
-│          test_extract_service.py  fixtures/order_01.expected.json
+│  ├─ ui/       app.py  find.py  geom.py  wait.py  input.py  ocr.py  table.py  evidence.py
+│  └─ flow/     context.py  runner.py  common.py  order.py  debtor.py  products.py
+│               save_order.py  invoice.py
+├─ tests/  test_calc.py  test_validate.py  test_match.py  test_table.py  test_models.py
+│          test_extract_service.py  test_find.py  test_flow_runner.py  test_products.py
+│          test_invoice.py  test_ui_helpers.py  test_ocr_live_images.py  uia_dump.py
+│          fixtures/order_01.expected.json  fixtures/uia/  fixtures/ocr/
 └─ artifacts/   (gitignored)   .cache/ (gitignored)
 ```
+
+The payment-method, VAT and product steps live in the stage modules (`debtor.py`, `products.py`);
+shared helpers (tabs, open/maximize a view, read a table, selectors, save once) are in
+`flow/common.py`; the Documents lookup by number is in `save_order.py`.
 
 ---
 
 ## 11. Testing strategy
 
-- **Offline unit:** calc; validate (golden fixture + mutated variants); match (none/exact/
-  ambiguous/conflict); table grouping (synthetic OCR words); extraction service retry + cache with
-  a fake provider.
+- **Offline unit (129 tests):** calc; validate (golden fixture + mutated variants); match
+  (none/exact/ambiguous/conflict); table grouping (synthetic OCR words); extraction service retry +
+  cache with a fake provider; plus replays of real UIA dumps (`fixtures/uia/`) and live OCR
+  captures (`fixtures/ocr/`) for control finding, tables, products and invoice checks.
 - **Live (user's machine):** extraction once against the real API; flow stage by stage with
   `--stop-after` on a fresh Fakturama DB (create paths).
 - **Second run, same image:** everything should be *selected*, not *created* (select paths).
 - **Negative:** manually create a same-name Debtor with a different ZIP → expect manual-review stop.
+- **More samples:** `order_02.png` (all create paths, 7 % VAT, Credit Card) and `order_03.png`
+  (existing Debtor, mixed products, UNPAID), generated by `tools/make_samples.py`.
 
 ---
 
@@ -386,3 +419,23 @@ photographed/skewed images; CI for offline tests.
 3. Exact control type/labels of price mode (Net/Gross) and VAT mode.
 4. UIA names of toolbar items, New panel items, and the follow-up "Invoice" action.
 5. Debtor address sub-tabs and address-role controls.
+
+---
+
+## 14. Changes from the original plan (found during implementation)
+
+| Area | Original plan | Final code | Why |
+|---|---|---|---|
+| Text input (D10) | UIA ValuePattern, fallback typing | Real keystrokes with proven focus; ValuePattern only as fallback | A Company set by ValuePattern showed on screen but was saved empty |
+| Dates | open question (§13) | Arrow keys per date field, field order learned at run time | Text set through UIA reverted to today |
+| OCR | upscale 2× | no upscale | 2× made OCR worse on a 3000-px screen |
+| Table columns | header text positions | header grid lines + fuzzy header names + context re-read of dropped cells | headers centred in some tables, left-aligned in others; OCR drops short tokens |
+| Payment method | created inside the Debtor editor, only for a new Debtor | separate step before the Debtor, **on every run** | no unsaved editor in the background; the Invoice needs the method even for an existing Debtor (seen live after deleting "Bank Transfer") |
+| VATs | per product, before it is created | all VAT rates of the order up front (`ensure_vats`) | each rate is checked once, before any product editor is open |
+| VAT reuse | Name + Value + code S | Name + Value | the VATs list shows no code column |
+| New product | left panel "New product" | top-toolbar button "Create a new product" | the left-panel link stopped opening the editor once the VATs view was open |
+| Data > Documents | find the row | search by number, view maximized while read | a narrow layout truncated every cell |
+| Invoice Items | Items pane rect | rect cut at the "Remarks" label | the invoice is a scrolled form; Items runs under the totals panel |
+| Launching Fakturama | attach or launch | attach only | out of scope; must be running, maximized |
+| CLI | `--stop-after` | also `--start-at` (continue in open editors) and `gui` (launcher window) | stage-by-stage development; one-click runs |
+| Performance | not planned | `perf.py` counters; pane-scoped UIA reads, cached snapshots, `FindFirst` | ~75 % of a run was UI-tree reads; 156 s → 63.5 s with every check kept |

@@ -283,7 +283,8 @@ cheaper, not from skipping checks: 156 s → **63.5 s**.
 - **G4** "Exact" = equal after whitespace/case normalisation.
 - **G5** Table rows are read via OCR.
 - **G6** A differing product description is a warning (configurable to stop).
-- The payment method is created before the Debtor (no unsaved editor in the background).
+- The payment method is checked on every run and created before any Debtor editor opens (no unsaved
+  editor in the background); the Invoice needs it even when the Debtor already exists.
 - The unit ("pcs") isn't entered: there's no field for it.
 - An existing VAT's code isn't re-checked: there's no column for it.
 - Documents are located by number; Cust.Ref. there is OCR-compared with a warning, and exact in
