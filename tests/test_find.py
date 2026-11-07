@@ -71,6 +71,34 @@ def test_view_table_rect_scoped_to_named_pane():
     assert snap.within(view).table_rect() == Rect(668, 1422, 2992, 1896)
 
 
+def test_icons_below_label_upper_is_select_existing(order):
+    addr = order.icons_below("Addresses")
+    assert [i.rect.top for i in addr] == [514, 570]          # upper = select, lower = green +
+    items = order.icons_below("Items")
+    assert items[0].rect.top == 692 and len(items) == 4
+
+
+def test_tab_item_ignores_dirty_star(order):
+    assert order.tab_item("New Order").name == "New Order"
+    with pytest.raises(ElementNotFound):
+        order.tab_item("Nope")
+
+
+def test_address_type_popup_and_second_address():
+    from i2c.flow.debtor import _active_address_tab
+
+    popup = Snapshot.take(load_dump(UIA / "debtor_address_type_popup.txt"))
+    assert {n.name for n in popup.find("CheckBox")} == {"Invoice address", "Delivery address"}
+    field = popup.inputs_after_label("address type", ("Edit",))[0]
+    button = popup.inputs_after_label("address type", ("Button",))[0]
+    assert button.rect.left >= field.rect.right - 1
+
+    second = Snapshot.take(load_dump(UIA / "debtor_second_address.txt"))
+    assert _active_address_tab(second) == "additional address #1"
+    assert _active_address_tab(Snapshot.take(load_dump(UIA / "debtor_addresses.txt"))) == "Main address"
+    assert second.one("Button", "+")
+
+
 def test_debtor_two_edits_one_label():
     snap = Snapshot.take(load_dump(UIA / "debtor_addresses.txt"))
     assert snap.by_label("Street").name == "Street"

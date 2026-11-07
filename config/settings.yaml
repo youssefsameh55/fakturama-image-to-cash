@@ -63,6 +63,8 @@ labels:                                # confirmed against UIA probe dumps (arti
     documents: "Documents"
     vats: "VATs"
     terms_of_payment: "terms of payment"
+    new_payment_button: "Create a new term of payment"   # green + in the terms of payment view
+    new_vat_button: "Create a new tax rate"
   order_editor:
     tab: "New Order"
     number: "No."
@@ -72,8 +74,10 @@ labels:                                # confirmed against UIA probe dumps (arti
     cust_ref: "Cust.Ref."
     vat_mode: "VAT"                        # ComboBox "VAT"
     with_vat: "With VAT"
-    addresses: "Addresses"
-    items: "Items"
+    addresses: "Addresses"                 # upper Image below it = select existing contact
+    invoice_address_tab: "Invoice address"
+    delivery_address_tab: "Delivery address"
+    items: "Items"                         # upper Image below it = select existing product
     total_gross: "Total Gross"
     vat_total: "VAT"                       # Edit "VAT" (totals block)
     total: "Total"
@@ -92,6 +96,7 @@ labels:                                # confirmed against UIA probe dumps (arti
     tab_addresses: "Addresses"
     tab_main_address: "Main address"
     tab_misc: "Miscellaneous"              # holds the Payment combo (there is no Payment tab)
+    tab_main_address_name: "Main address"
     customer_id: "Customer ID"
     company: "Company"
     name: "First Name Last Name"           # one label, two Edits
@@ -104,8 +109,15 @@ labels:                                # confirmed against UIA probe dumps (arti
     address_spec: "Address specification"
     district: "district"
     alias: "Alias name"
-    payment: "Payment"
+    discount: "Discount"
+    payment: "Payment"                     # ComboBox shows the payment term's Description
     net_gross: "Net or Gross"
+    net: "Net"
+    address_type: "address type"           # Edit + Button; the button opens role CheckBoxes
+    role_invoice: "Invoice address"
+    role_delivery: "Delivery address"
+    add_address: "+"                       # adds the tab 'additional address #1'
+    additional_tab: "additional address #1"
   vat_editor:
     tab: "New TAX Rate"
     name: "Name"
@@ -116,7 +128,13 @@ labels:                                # confirmed against UIA probe dumps (arti
     tab: "New Term of Payment"
     name: "Name"
     description: "Description"
+    code: "!editorPaymentPaymentcode!"     # sic: untranslated label in Fakturama; default 'Mutually defined '
+    cash_discount: "Cash discount"
+    discount_days: "Discount Days"
     net_days: "Net Days"
+    text_unpaid: "Text 'unpaid'"
+    text_deposit: "Text 'deposit'"
+    text_paid: "Text 'paid'"
   product_editor:
     tab: "New product"
     item_number: "Item Number"

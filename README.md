@@ -16,7 +16,8 @@ See `PLAN.md` for the full design. `DESIGN.md` (Part 1) will be written after th
 | UIA probe of 10 screens | done (`artifacts/probe/`, findings below) |
 | M3 UI toolkit (find/wait/input/ocr/table/evidence) | done; checked live on VATs, terms of payment and Select the address |
 | M4 Run framework + stage `order` | done; live run verified (PO000001, Jul 14 2026, Cust.Ref., Net, With VAT) |
-| M5–M7 Flow stages | not started |
+| M5 Stage `debtor` (match / payment method / create / select) | code done, offline-tested; live run pending |
+| M6–M7 Flow stages | not started |
 | M8 Deliverables | not started |
 
 ## Setup
@@ -99,6 +100,18 @@ See `PLAN.md` §9 (G1–G6). Additional implementation decisions:
   values entered with real key input.
 - **The fresh Fakturama database has only VAT "Tax-free 0%" and payment term "Cash".** So creating
   the VAT rate and the payment method is required for the sample order, not an optional extra.
+- **The payment method is created before the Debtor, not halfway through it.** The plan creates
+  it while the Debtor editor is open. Doing it first gives the same result without an unsaved
+  editor waiting in the background during a tab switch. It only runs when the Debtor has to be
+  created.
+- **A different delivery address becomes "additional address #1" with only the Delivery role**
+  (G1). Its name ("Northstar Office Warehouse") goes into that address's "additional name" field,
+  since the Debtor has a single company name.
+- **Action icons are found by structure.** The "select existing" icons next to Addresses and
+  Items are unnamed UIA `Image`s, so the stage picks the upper icon stacked under the label,
+  never the green +.
+- **`--start-at STAGE`** (development only) continues in the editors that are already open, so a
+  stage can be re-run without redoing the previous ones.
 - **The Debtor's payment method is on the Miscellaneous tab.** There is no Payment tab.
 
 ## Skipped / not implemented

@@ -187,6 +187,35 @@ class Snapshot:
             raise ElementNotFound(f"no {'/'.join(types)} after label {label!r}")
         return sorted(out, key=lambda n: n.rect.left)
 
+    def icons_below(self, label: str, control_type: str = "Image") -> list[Node]:
+        """Unnamed icon controls stacked under a Text label, top to bottom.
+
+        Probe: the order editor's 'Addresses' and 'Items' labels have their action icons as
+        unnamed Images directly below them (upper = select existing, then the green +).
+        """
+        lab = self.one("Text", label)
+        icons = [n for n in self.find(control_type)
+                 if n.rect.area and n.rect.top >= lab.rect.bottom - 4 and n.rect.h_overlap(lab.rect) > 0]
+        icons.sort(key=lambda n: n.rect.top)
+        # Keep only the contiguous stack: stop at the first big vertical gap.
+        stack: list[Node] = []
+        for n in icons:
+            if stack and n.rect.top - stack[-1].rect.bottom > 2 * max(n.rect.height, 20):
+                break
+            stack.append(n)
+        if not stack:
+            raise ElementNotFound(f"no {control_type} icons below label {label!r}")
+        return stack
+
+    def tab_item(self, name: str) -> Node:
+        """TabItem by name, ignoring the '*' Fakturama prefixes to dirty editors."""
+        found = [n for n in self.find("TabItem") if n.name.lstrip("*") == name]
+        if not found:
+            raise ElementNotFound(f"no tab {name!r}")
+        if len(found) > 1:
+            raise AmbiguousElement(f"{len(found)} tabs named {name!r}")
+        return found[0]
+
     def is_leaf_pane(self, node: Node) -> bool:
         """A Pane whose subtree holds nothing but scrollbars: how NatTable shows up in UIA."""
         if node.control_type != "Pane":

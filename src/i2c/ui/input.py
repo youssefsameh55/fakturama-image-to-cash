@@ -94,7 +94,7 @@ def _select_by_arrows(ctrl: object, text: str, max_items: int, step_timeout: flo
     seen: list[str] = []
     for _ in range(max_items):
         value = get_value(ctrl)
-        if value == text:
+        if value.strip() == text.strip():
             return True
         if seen and value == seen[-1]:
             break  # end of list: DOWN no longer changes the value
@@ -104,33 +104,75 @@ def _select_by_arrows(ctrl: object, text: str, max_items: int, step_timeout: flo
             wait_until(lambda: get_value(ctrl) != value, step_timeout, desc="combo to move")
         except UITimeout:
             break
-    log.debug("combo items seen while searching %r: %s", text, seen)
-    return get_value(ctrl) == text
+    log.info("combo items seen while searching %r: %s", text, seen)
+    return _combo_is(ctrl, text)
 
 
-def select_combo(ctrl: object, text: str, timeout: float = 5.0, max_items: int = 60) -> str:
-    """Select the item whose text equals `text` exactly; verify via the combo's value.
+def _combo_is(ctrl: object, text: str) -> bool:
+    """Exact item match, ignoring surrounding whitespace (probe: 'Mutually defined ')."""
+    return get_value(ctrl).strip() == text.strip()
 
-    1. pywinauto select (expand + pick list item), 2. arrow-key walk (read-only SWT combos).
+
+def select_combo(ctrl: object, text: str, timeout: float = 5.0, max_items: int = 300) -> str:
+    """Select the item whose text equals `text` (trimmed); verify via the combo's value.
+
+    1. pywinauto select (expand + pick list item)
+    2. type the text: a Windows combo jumps to the first item with that prefix (long lists
+       such as Country), verified by read-back
+    3. arrow-key walk from the top (read-only SWT combos), verified per step
     """
-    if get_value(ctrl) == text:
-        return text
+    if _combo_is(ctrl, text):
+        return get_value(ctrl)
     errors: list[str] = []
     try:
         ctrl.select(text)  # type: ignore[attr-defined]
-        wait_until(lambda: get_value(ctrl) == text, timeout, desc=f"combo value {text!r}")
+        wait_until(lambda: _combo_is(ctrl, text), timeout, desc=f"combo value {text!r}")
         _collapse(ctrl)
-        return text
+        return get_value(ctrl)
     except Exception as exc:  # noqa: BLE001
         errors.append(f"select: {exc!r}")
         _collapse(ctrl)
     try:
+        ctrl.set_focus()  # type: ignore[attr-defined]
+        ctrl.type_keys(escape_keys(text), with_spaces=True, set_foreground=True)  # type: ignore[attr-defined]
+        wait_until(lambda: _combo_is(ctrl, text), 1.5, desc=f"combo value {text!r} after typing")
+        return get_value(ctrl)
+    except Exception as exc:  # noqa: BLE001
+        errors.append(f"typing: {exc!r}")
+    try:
         if _select_by_arrows(ctrl, text, max_items, step_timeout=1.0):
-            return text
+            return get_value(ctrl)
         errors.append("arrows: item not found")
     except Exception as exc:  # noqa: BLE001
         errors.append(f"arrows: {exc!r}")
     raise UIError(f"combo did not take {text!r} (now {get_value(ctrl)!r}; {errors})")
+
+
+def combo_items(ctrl: object, max_items: int = 300) -> list[str]:
+    """All items of a combo, read by walking it with the keyboard (restores nothing: callers
+    select afterwards). Used to give a precise error when an exact item is missing."""
+    ctrl.set_focus()  # type: ignore[attr-defined]
+    ctrl.type_keys("{HOME}", set_foreground=True)  # type: ignore[attr-defined]
+    items: list[str] = []
+    for _ in range(max_items):
+        value = get_value(ctrl)
+        if items and value == items[-1]:
+            break
+        items.append(value)
+        ctrl.type_keys("{DOWN}", set_foreground=True)  # type: ignore[attr-defined]
+        try:
+            wait_until(lambda: get_value(ctrl) != value, 0.7, desc="combo to move")
+        except UITimeout:
+            break
+    return items
+
+
+def select_tab(ctrl: object) -> None:
+    """Activate a TabItem through UIA SelectionItem (SWT tab rects in UIA are unreliable)."""
+    try:
+        ctrl.iface_selection_item.Select()  # type: ignore[attr-defined]
+    except Exception:  # noqa: BLE001
+        ctrl.select()  # type: ignore[attr-defined]
 
 
 def get_checked(ctrl: object) -> bool:

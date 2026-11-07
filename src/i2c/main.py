@@ -33,6 +33,9 @@ def build_parser() -> argparse.ArgumentParser:
     run.add_argument("image", nargs="?", default="samples/order_01.png")
     run.add_argument("--from-json", help="skip extraction and load OrderData from this JSON file")
     run.add_argument("--stop-after", choices=STAGES)
+    run.add_argument("--start-at", choices=STAGES,
+                     help="skip earlier stages and continue in the editors that are already open "
+                          "(development: re-run one stage without redoing the previous ones)")
     return ap
 
 
@@ -133,6 +136,7 @@ def cmd_run(args: argparse.Namespace) -> int:
     set_dpi_awareness()  # before any UIA / capture call
 
     from i2c.config import load_settings
+    from i2c.flow import debtor as debtor_stage
     from i2c.flow import order as order_stage
     from i2c.flow.context import RunContext
     from i2c.flow.runner import run_flow
@@ -164,9 +168,12 @@ def cmd_run(args: argparse.Namespace) -> int:
     app.focus()
     ctx = RunContext(settings, order, app, Evidence(run_dir, area=app.rect), run_dir)
 
-    implemented = {"order": order_stage.STEPS}
-    stages = [(name, implemented.get(name, [])) for name in STAGES]
-    missing = tuple(name for name in STAGES if name not in implemented)
+    implemented = {"order": order_stage.STEPS, "debtor": debtor_stage.STEPS}
+    names = STAGES[STAGES.index(args.start_at):] if args.start_at else STAGES
+    if args.start_at:
+        log.warning("starting at stage %r: earlier stages are assumed done in the open editors", args.start_at)
+    stages = [(name, implemented.get(name, [])) for name in names]
+    missing = tuple(name for name in names if name not in implemented)
     return run_flow(ctx, stages, args.stop_after, not_implemented=missing)
 
 
