@@ -69,8 +69,8 @@ def find_debtor(ctx: RunContext) -> str:
 # ------------------------------------------------------------------ step 2: payment method
 
 def ensure_payment_method(ctx: RunContext) -> str:
-    if not _creating(ctx):
-        return "skipped: debtor already exists"
+    # Runs for existing debtors too: the Invoice's payment combo needs the method as well, so a
+    # method deleted from Data > terms of payment must be recreated even when the debtor is selected.
     method = ctx.order.payment.method
     if not method:
         raise ManualReviewRequired("no payment method extracted", ctx.current_step)

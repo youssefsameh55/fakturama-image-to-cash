@@ -125,9 +125,11 @@ Further decisions:
   - Only validated results are cached, and a cached result is re-validated on read.
   - A forced tool call is used, falling back to `tool_choice=auto` for models that reject it.
 - **VAT tolerance** is ±0.01 per line (Fakturama may round VAT per line).
-- **The payment method is created before the Debtor** (only when the Debtor must be created), so
-  that no unsaved editor waits in the background during tab switches. The result is the same as the
-  brief's order.
+- **The payment method is checked on every run** and created if it is missing, even when the Debtor
+  already exists, because the Invoice needs it too. Found in a live test: after "Bank Transfer" was
+  deleted, a run with an existing Debtor stopped at the Invoice. When a Debtor is created, the method
+  is created first, so that no unsaved editor waits in the background during tab switches. The result
+  is the same as the brief's order.
 - **The delivery address name** ("Northstar Office Warehouse") goes into that address's
   "additional name". The order's address box doesn't display it, so the order check compares
   company, street, ZIP, city and country.
