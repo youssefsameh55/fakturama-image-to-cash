@@ -84,6 +84,7 @@ labels:                                # confirmed against UIA probe dumps (arti
     invoice_address_tab: "Invoice address"
     delivery_address_tab: "Delivery address"
     items: "Items"                         # upper Image below it = select existing product
+    remarks: "Remarks"                     # top of the panel below Items (clips the Items rect)
     total_gross: "Total Gross"
     total_net: "Total Net"                 # first totals Edit in Net mode (Total Gross in Gross mode)
     discount: "Discount"

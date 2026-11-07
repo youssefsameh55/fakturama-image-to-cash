@@ -37,3 +37,11 @@ def test_check_document():
     warnings = []
     assert check_document(bad, date(2026, 7, 14), "WEB-2026-0714-A17", Decimal("678.30"), warnings) == ["Total '$583.10'"]
     assert len(warnings) == 1
+
+
+def test_invoice_items_rect_clipped_at_remarks():
+    from i2c.flow.products import _items_table_rect
+    from i2c.ui.geom import Rect
+    snap = Snapshot.take(load_dump(ROOT / "tests/fixtures/uia/invoice.txt"))
+    ed = snap.within(snap.find("Pane", name="New Invoice")[0])
+    assert _items_table_rect(ed, ctx()) == Rect(686, 712, 2944, 948)     # pane went to 996

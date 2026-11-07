@@ -120,7 +120,14 @@ def _items_table_node(ed: Snapshot, ctx: RunContext):  # noqa: ANN202 - find.Nod
 
 
 def _items_table_rect(ed: Snapshot, ctx: RunContext) -> Rect:
-    return _items_table_node(ed, ctx).rect
+    """Visible part of the Items table. In the invoice editor (a scrolled form) the table pane
+    runs on under the Remarks/totals panel (probe 10: pane to y=996, Remarks at y=950); OCR
+    there read the totals as a third line (seen live). Cut at the Remarks label."""
+    r = _items_table_node(ed, ctx).rect
+    for rem in ed.find("Text", name=_L(ctx, "order_editor.remarks")):
+        if r.top < rem.rect.top < r.bottom:
+            r = Rect(r.left, r.top, r.right, rem.rect.top - 2)
+    return r
 
 
 def read_items(ctx: RunContext, stable: bool = False) -> tuple[Table, Rect]:

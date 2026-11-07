@@ -55,6 +55,12 @@ def _payment_combo(ed: Snapshot, ctx: RunContext):  # noqa: ANN202
 def check_invoice(ctx: RunContext) -> str:
     o = ctx.order
     ed = _editor(ctx)
+    if not ctx.results.get("invoice_no"):          # resumed with --start-at invoice
+        ctx.results["invoice_no"] = get_value(ed.by_label(_L(ctx, "invoice_editor.number"), ["Edit"]).wrapper()).strip()
+    if not ctx.results.get("order_no"):
+        from i2c.flow.save_order import _resume_saved_order
+        _resume_saved_order(ctx)
+        ed = _editor(ctx)
     problems = []
     ref = get_value(ed.by_label(_L(ctx, "order_editor.cust_ref"), ["Edit"]).wrapper()).strip()
     if ref != o.external_reference:
