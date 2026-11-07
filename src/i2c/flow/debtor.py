@@ -16,7 +16,7 @@ from i2c.flow.common import (activate_editor, activate_subtab, cancel_dialog, op
                              pick_row_and_ok, read_view_table, save_once, search_selector)
 from i2c.flow.context import RunContext
 from i2c.flow.runner import Step
-from i2c.match import Outcome, match_by_name, match_debtor, norm
+from i2c.match import Outcome, cell_matches, match_by_name, match_debtor, norm
 from i2c.models import Address
 from i2c.ui.find import Snapshot
 from i2c.ui.input import click, get_checked, get_value, select_combo, set_checkbox, set_text
@@ -189,7 +189,7 @@ def _verify_saved_debtor(ctx: RunContext) -> None:
     d = ctx.order.debtor
     view = open_view(ctx, "debtors", _L(ctx, "views.debtors"))
     rows = read_view_table(ctx, view, "debtors").as_dicts()
-    hits = [r for r in rows if all(norm(r.get(k)) == norm(v) for k, v in
+    hits = [r for r in rows if all(cell_matches(r.get(k), v) for k, v in
                                    (("Company", d.company), ("First Name", d.first_name), ("Name", d.last_name)))]
     if len(hits) != 1:
         raise UIError(f"saved debtor not found exactly once in the Debtors list by company + name "

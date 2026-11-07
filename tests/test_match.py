@@ -51,3 +51,15 @@ def test_match_product():
     assert r.outcome is Outcome.EXACT and "description differs" in r.reason
     assert match_product(rows + rows[:1], "CHR-ERG-01").outcome is Outcome.AMBIGUOUS
     assert match_product(rows, "NOPE").outcome is Outcome.NONE
+
+
+def test_truncated_cells():
+    from i2c.match import cell_matches
+    assert cell_matches("Northstar Offic...", "Northstar Office GmbH")
+    assert cell_matches("Northstar Office Gm\u2026", "Northstar Office GmbH")
+    assert not cell_matches("Northstar Offic...", "Southstar Office GmbH")
+    assert not cell_matches("Nor...", "Northstar Office GmbH")          # too little visible
+    r = match_debtor([row(company="Northstar Offic...")], DEBTOR)
+    assert r.outcome is Outcome.EXACT
+    two = match_debtor([row(company="Northstar Offic..."), row(company="Northstar Office GmbH")], DEBTOR)
+    assert two.outcome is Outcome.AMBIGUOUS

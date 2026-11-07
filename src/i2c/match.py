@@ -32,8 +32,27 @@ def norm(value: object) -> str:
     return " ".join(text.split()).casefold()
 
 
+TRUNCATION_MARKS = ("...", "…")
+MIN_VISIBLE_PREFIX = 4
+
+
+def cell_matches(cell: object, want: object) -> bool:
+    """Exact (normalised) equality; a cell Fakturama truncated to fit its column ('Northstar
+    Offic...', seen live) matches when `want` starts with the visible part (>= 4 chars).
+    Two rows sharing such a prefix both match, which surfaces as AMBIGUOUS -> manual review."""
+    c, w = norm(cell), norm(want)
+    if c == w:
+        return True
+    for mark in TRUNCATION_MARKS:
+        if c.endswith(mark):
+            visible = c[: -len(mark)].rstrip()
+            return len(visible) >= MIN_VISIBLE_PREFIX and w.startswith(visible)
+    return False
+
+
 def _eq(a: object, b: object) -> bool:
-    return norm(a) == norm(b)
+    """a = cell text from a table, b = source value."""
+    return cell_matches(a, b)
 
 
 def match_debtor(rows: list[dict[str, str]], debtor: Debtor) -> MatchResult:
