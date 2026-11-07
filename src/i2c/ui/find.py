@@ -85,6 +85,12 @@ class Snapshot:
 
     # ------------------------------------------------------------ tree helpers
 
+    def node_at(self, index: int) -> Node:
+        return self.nodes[index]
+
+    def parent(self, node: Node) -> Node | None:
+        return None if node.parent is None else self.node_at(node.parent)
+
     def children(self, node: Node) -> list[Node]:
         return [self.nodes[i] for i in self._children.get(node.index, [])]
 
@@ -254,6 +260,9 @@ class _SubSnapshot(Snapshot):
         self._children = {k: [c for c in v if c in keep]
                           for k, v in parent._children.items() if k in keep}
         self._all = parent.nodes
+
+    def node_at(self, index: int) -> Node:
+        return self._all[index]
 
     def descendants(self, node: Node) -> list[Node]:
         out: list[Node] = []

@@ -220,6 +220,39 @@ def build_table(words: list[Word], table_rect: Rect, lines: list[int] | None,
     return Table(headers, columns, out, raw)
 
 
+# ---------------------------------------------------------------- phrases (tab labels etc.)
+
+def find_phrase(words: list[Word], phrase: str, min_ratio: float = 0.85) -> Rect | None:
+    """Box of the run of consecutive OCR words (same line, left to right) spelling `phrase`.
+
+    Comparison ignores case, spaces and punctuation ('*New Debtor' == 'New Debtor'); exact
+    first, then the best fuzzy run above `min_ratio`. None if nothing qualifies or two runs
+    tie (ambiguous).
+    """
+    target = _norm(phrase)
+    if not target:
+        return None
+    best: tuple[float, Rect] | None = None
+    tie = False
+    for line in group_rows([w for w in words if w.text.strip()], tolerance=8):
+        for i in range(len(line)):
+            text = ""
+            for j in range(i, min(i + 6, len(line))):
+                text += _norm(line[j].text)
+                ratio = 1.0 if text == target else difflib.SequenceMatcher(None, text, target).ratio()
+                if ratio >= min_ratio:
+                    box = _bounding(line[i:j + 1])
+                    if best is None or ratio > best[0]:
+                        best, tie = (ratio, box), False
+                    elif ratio == best[0] and box != best[1]:
+                        tie = True
+                if len(text) > len(target) + 3:
+                    break
+    if best is None or tie:
+        return None
+    return best[1]
+
+
 # ---------------------------------------------------------------- dropped-cell recovery
 #
 # Windows OCR silently drops short isolated tokens ("0", "2", "0%") - measured on the probe

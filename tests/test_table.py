@@ -111,3 +111,13 @@ def test_signature_changes_with_content():
     a = build_table([w("Name", 1010, 510), w("x", 1010, 550)], TABLE, lines=[])
     b = build_table([w("Name", 1010, 510), w("y", 1010, 550)], TABLE, lines=[])
     assert a.signature() != b.signature()
+
+
+def test_find_phrase_tab_labels():
+    from i2c.ui.table import find_phrase
+    words = [w("Main", 656, 712, 50), w("address", 712, 712, 83), w("additional", 813, 712, 110),
+             w("address", 930, 712, 83), w("#1", 1018, 712, 18), w("x", 1050, 712, 8)]
+    assert find_phrase(words, "Main address") == Rect(656, 712, 795, 732)
+    assert find_phrase(words, "additional address #1") == Rect(813, 712, 1036, 732)
+    assert find_phrase([w("*New", 10, 5, 40), w("Debtor", 60, 5, 60)], "New Debtor") is not None
+    assert find_phrase(words, "Miscellaneous") is None

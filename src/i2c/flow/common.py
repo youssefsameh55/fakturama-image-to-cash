@@ -38,14 +38,53 @@ def save_once(ctx: RunContext, what: str) -> None:
     log.info("saved %s", what)
 
 
+def tab_bar_rect(snap: Snapshot, item) -> Rect:  # noqa: ANN001 - find.Node
+    """The strip of a tab folder that holds the tab labels: from the folder's top down to its
+    first content child. The folder is the TabItem's parent `Tab` node (UIA tree)."""
+    folder = snap.parent(item)
+    if folder is None:
+        raise UIError(f"tab {item.name!r} has no parent folder")
+    r = folder.rect
+    tops = [c.rect.top for c in snap.children(folder)
+            if c.control_type != "TabItem" and c.rect.area and c.rect.top > r.top + 8]
+    bottom = min(tops) if tops else r.top + 60
+    return Rect(r.left, r.top, r.right, min(bottom, r.top + 120))
+
+
+def activate_tab(ctx: RunContext, snap: Snapshot, name: str, ready: Callable[[], bool], what: str) -> None:
+    """Activate tab `name` and wait for `ready()`.
+
+    1. accessibility (SelectionItem / default action) - may be unsupported by SWT
+    2. OCR the folder's tab bar (rect from UIA), find the label, click its word box
+    """
+    from i2c.ui.ocr import ocr_rect
+    from i2c.ui.table import find_phrase
+
+    item = snap.tab_item(name)
+    if select_tab(item.wrapper()):
+        try:
+            wait_until(ready, 2.0, ctx.interval, desc=what)
+            return
+        except Exception:  # noqa: BLE001
+            log.info("accessibility select did not switch to %r; using OCR on the tab bar", name)
+    bar = tab_bar_rect(snap, item)
+    words, _ = ocr_rect(bar, float(ctx.settings.get("ocr.upscale", 1)), ctx.settings.get("ocr.language", "en-US"))
+    box = find_phrase(words, name)
+    if box is None:
+        raise UIError(f"tab label {name!r} not found by OCR in tab bar {bar.as_tuple()}: "
+                      f"{[w.text for w in words]}")
+    ctx.targets.append(box)
+    click_point(*box.center)
+    wait_until(ready, ctx.timeout(), ctx.interval, desc=what)
+
+
 def activate_editor(ctx: RunContext, name: str) -> Snapshot:
     """Bring an open editor tab (e.g. 'New Order', also '*New Order') to the front.
     Only the active editor's controls are exposed via UIA (probe), so wait for its pane."""
     snap = ctx.snapshot()
     if not snap.find("Pane", name=name):
-        select_tab(snap.tab_item(name).wrapper())
-        wait_until(lambda: ctx.snapshot().find("Pane", name=name), ctx.timeout("window"), ctx.interval,
-                   desc=f"editor {name!r} to become active")
+        activate_tab(ctx, snap, name, lambda: bool(ctx.snapshot().find("Pane", name=name)),
+                     f"editor {name!r} to become active")
     return ctx.editor(name)
 
 
@@ -53,8 +92,7 @@ def activate_subtab(ctx: RunContext, editor: str, tab: str, ready: Callable[[Sna
     """Select a tab inside an editor (Addresses / Miscellaneous / additional address #1)."""
     ed = ctx.editor(editor)
     if not ready(ed):
-        select_tab(ed.tab_item(tab).wrapper())
-        wait_until(lambda: ready(ctx.editor(editor)), ctx.timeout(), ctx.interval, desc=f"tab {tab!r}")
+        activate_tab(ctx, ed, tab, lambda: ready(ctx.editor(editor)), f"tab {tab!r}")
     return ctx.editor(editor)
 
 

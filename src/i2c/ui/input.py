@@ -167,12 +167,21 @@ def combo_items(ctrl: object, max_items: int = 300) -> list[str]:
     return items
 
 
-def select_tab(ctrl: object) -> None:
-    """Activate a TabItem through UIA SelectionItem (SWT tab rects in UIA are unreliable)."""
-    try:
-        ctrl.iface_selection_item.Select()  # type: ignore[attr-defined]
-    except Exception:  # noqa: BLE001
-        ctrl.select()  # type: ignore[attr-defined]
+def select_tab(ctrl: object) -> bool:
+    """Try to activate a TabItem through accessibility APIs. Returns False if none works.
+
+    Live finding: SWT CTabItems answer SelectionItem.Select() with 'Member not found', and
+    their UIA rectangles are in unscaled coordinates, so callers fall back to clicking the
+    tab label found by OCR in the tab bar (flow.common.activate_tab).
+    """
+    for attempt in (lambda: ctrl.iface_selection_item.Select(),            # type: ignore[attr-defined]
+                    lambda: ctrl.iface_legacy_iaccessible.DoDefaultAction()):  # type: ignore[attr-defined]
+        try:
+            attempt()
+            return True
+        except Exception:  # noqa: BLE001
+            continue
+    return False
 
 
 def get_checked(ctrl: object) -> bool:
