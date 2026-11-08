@@ -12,32 +12,42 @@ leaves Fakturama as it is.
 
 ## Status
 
-- **The full flow works end to end** against Fakturama 2.x (English UI, Windows 11). Best run:
-  `status: ok` in **63.5 s** (run `20261107-054628`: PO000008 + INV000006, paid, all master data
-  selected). The first working version took 156 s; every required check was kept while speeding it up.
-- **Create paths verified live:** new Debtor with two addresses, new payment method, new VAT and new
-  products, first in stage-by-stage runs on an empty database, and again after deleting master data
-  by hand. Run `20261107-190424` recreated both deleted products; run `20261107-191020` recreated a
-  deleted "Bank Transfer" for an existing Debtor (`status: ok`, 77.8 s).
-- **129 offline tests** (`pytest -q`).
-- `order_02.png` and `order_03.png` were added later and **haven't been run against Fakturama yet**
-  (see "Skipped").
+- **The full flow works end to end** against Fakturama 2.x (English UI, Windows 11), in both cases:
 
-Timing of the best run (second run on the same image, so all master data is selected):
+  | Case | Run | Result | Time |
+  |---|---|---|---|
+  | All master data **created** (Debtor with two addresses, payment method, VAT, two products) | `20261108-041316` | PO000018 + INV000013, paid | **128.5 s** |
+  | All master data **selected** (same image, run again) | `20261108-041854` | PO000019 + INV000014, paid | **61.6 s** |
+
+  Both ran from a saved extraction (`--from-json`, no LLM call). The first working version took 156 s with
+  everything selected and 188 s with everything created; every required check was kept while
+  speeding it up (see "What the live runs showed").
+- **Create paths were also verified one by one:** stage by stage on an empty database, and again
+  after deleting master data by hand (products recreated; "Bank Transfer" recreated for an existing
+  Debtor).
+- **137 offline tests** (`pytest -q`).
+- **LLM used in testing:** Gemini 3.1 Flash-Lite (`LLM_PROVIDER=gemini`). Anthropic Claude Haiku is
+  the default in `.env.example`; both use the same schema, validation and cache.
+
+Timing printed at the end of each run (also in `run.log`):
 
 ```
-  status      : ok  (exit 0)
-  order       : PO000008    invoice: INV000006
-  entities    : {'debtor': 'selected', 'vat': {'VAT 19%': 'selected'},
-                 'product': {'CHR-ERG-01': 'selected', 'MAT-DESK-02': 'selected'}}
-  prepare     :     0.6 s   (extraction/JSON + attach)
-  order       :     8.1 s
-  debtor      :     5.7 s
-  products    :    13.9 s
-  save_order  :    14.2 s
-  invoice     :    20.8 s
-  TOTAL       :    63.5 s
+  status      : ok  (exit 0)                         status      : ok  (exit 0)
+  order       : PO000018    invoice: INV000013       order       : PO000019    invoice: INV000014
+  entities    : all created                          entities    : all selected
+  prepare     :     4.6 s   (JSON + attach)          prepare     :     4.1 s   (JSON + attach)
+  order       :     8.5 s                            order       :     7.8 s
+  debtor      :    45.0 s                            debtor      :     6.9 s
+  products    :    39.9 s                            products    :    12.7 s
+  save_order  :    13.3 s                            save_order  :    12.0 s
+  invoice     :    17.2 s                            invoice     :    17.8 s
+  TOTAL       :   128.5 s                            TOTAL       :    61.6 s
 ```
+
+**Evidence of these runs:** the annotated per-step screenshots, `summary.json` and `run.log` are in
+`artifacts/20261108-041316/` (created) and `artifacts/20261108-041854/` (selected), 26 screenshots
+each. Every run writes to `artifacts/<run-id>/` (`<run-id>` = start time, `YYYYMMDD-HHMMSS`); the
+launcher's **Open last run folder** opens the newest one. `artifacts/` is git-ignored.
 
 ## Setup
 
@@ -51,8 +61,9 @@ pip install -e .[dev]
 copy .env.example .env   # then set ANTHROPIC_API_KEY, or GEMINI_API_KEY with LLM_PROVIDER=gemini
 ```
 
-Start Fakturama, maximize it, close any open editor tabs, and don't touch mouse or keyboard during a
-run. The automation must run at the same privilege level as Fakturama.
+Start Fakturama, maximize it, close any open editor tabs (including the start page, which shows as
+"Can't reach this…" when offline), and don't touch mouse or keyboard during a run. Every open
+editor makes each UI read slower. The automation must run at the same privilege level as Fakturama.
 
 Run every command below with the venv's Python: activate it first (`.\.venv\Scripts\Activate.ps1`)
 or call `.venv\Scripts\python` directly. The system `python` gives `No module named i2c`.
@@ -60,7 +71,11 @@ or call `.venv\Scripts\python` directly. The system `python` gives `No module na
 ## Usage
 
 **Launcher window:** double-click `Launch.bat` (or run `python -m i2c gui`), pick an order image and
-press **Start**. It runs the same `python -m i2c run <image>` as below in a subprocess, shows its log
+press **Start**.
+
+![Launcher window: image picked, ready to start](docs/launcher.png)
+
+ It runs the same `python -m i2c run <image>` as below in a subprocess, shows its log
 live, minimizes itself during the run so it doesn't cover Fakturama, and shows the result in colour
 (done / manual review / error). **Stop** ends the run and leaves Fakturama as it is; **Open last run
 folder** opens the newest `artifacts/<run-id>/`.
@@ -79,20 +94,18 @@ python tools/dump_tree.py --window ".*Fakturama.*" --delay 5 --out artifacts/pro
 python tools/read_table.py --view "VATs" --kind vats          # read one table via UIA rect + OCR
 python tools/bench_uia.py                                     # read-only cost of UIA access strategies
 python tools/make_samples.py                                  # re-render samples/order_02.png, order_03.png
-pytest -q                                                      # 129 offline tests
+pytest -q                                                      # 137 offline tests
 ```
 
 Stages, in order: `order`, `debtor`, `products`, `save_order`, `invoice`.
 Exit codes: 0 ok · 2 usage · 3 manual review · 4 error.
 
-**Samples.** `order_01.png` is the brief's image. `order_02.png` and `order_03.png` are generated in
-the same layout (amounts computed with Decimal, so every total is consistent):
+**Sample.** `order_01.png` is the brief's image:
 
 | Sample | Debtor | Products / VAT | Payment | Paths it exercises |
 |---|---|---|---|---|
 | `order_01` | Northstar Office GmbH (two addresses) | CHR-ERG-01, MAT-DESK-02, 19 % | Bank Transfer, PAID | the brief's case |
-| `order_02` | Bluewave Studio GmbH (new, one address) | 3 new SKUs, one at **7 %** | **Credit Card**, PAID | create Debtor, payment method, VAT, products; 3 lines |
-| `order_03` | Northstar (existing) | 2 existing + 1 new SKU, 19 % | Bank Transfer, **UNPAID** | select paths, mixed products, unpaid Invoice |
+
 
 ### What a run produces (evidence)
 
@@ -104,7 +117,8 @@ the same layout (amounts computed with Decimal, so every total is consistent):
 - `summary.json`:
   - status (`ok` | `manual_review` | `error`), order and invoice numbers;
   - per entity whether it was **selected or created** (debtor, payment method, each VAT, each product);
-  - every step with its verification message, duration and screenshot;
+  - every step with its verification message, duration, screenshot and cost (UIA calls, OCR passes
+    and time spent waiting for Fakturama, as count and seconds), so a slow step can be traced;
   - warnings (e.g. an OCR'd value that was also checked exactly elsewhere);
   - stage durations, total wall-clock time, and `perf` counters (UIA reads, OCR passes, screenshots).
 
@@ -166,27 +180,27 @@ The timing block above is printed and written to `run.log` at the end of every r
 - **Safety guards:** no start if an unsaved editor of the same kind is open; no second line for a SKU
   already in the order; a Fakturama dialog during Save stops the run with its text.
 - **Speed:** about 75 % of the first runs went into reading the UI tree. Pane-scoped reads, UIA
-  `FindFirst`, one cache request per snapshot and background screenshot encoding took a run from
-  156 s to 63.5 s without dropping a check.
+  `FindFirst`, one cache request per snapshot and background screenshot encoding took the
+  all-selected run from 156 s to 61.6 s without dropping a check.
+- **Open editors slow everything down.** The first all-created run took 188 s: with five saved
+  editors left open, each UIA read cost ~260 ms instead of ~100–150 ms. Saved master-data editors
+  (payment method, Debtor, VAT, product) are now closed with Ctrl+F4 right after their save is
+  verified: never with unsaved changes, retried if Fakturama ignores the key, and a dialog on
+  closing stops the run. Ctrl+W is not bound in Fakturama; it typed a "w" into a saved field.
+- **Dialog lookups walked the whole desktop.** Waiting for a selector dialog to open or close
+  checked every window on the desktop through UIA, every 0.1 s. Fakturama's own windows are now
+  found through Win32 by process id; a new product line went from ~23 s to ~13 s. Together with
+  closing editors, the all-created run went from 188 s to 128.5 s.
+- **Screenshots are cheap:** 26 per run at ~0.1 s each (about 2 % of a run), so they are always on.
 
 ## Skipped / not implemented
 
-- **Screen recording:** not made. The annotated per-step screenshots are the evidence.
-- **`order_02` and `order_03` haven't been run against Fakturama.** Untested live: creating a 7 % VAT,
-  creating "Credit Card", a 3-line order and the UNPAID Invoice path.
-- **"New Contact" is still clicked in the left panel.** When a payment method is created first
-  (order_02), it may fail the way "New product" did. The toolbar alternative is a split button that
-  hasn't been probed yet.
 - **No resume after a manual-review stop** (see the first item below): a stopped run is finished by
   hand, or re-run after the cause is fixed.
 - **No duplicate-order guard:** running the same image twice creates a second Order and Invoice.
-- **An existing VAT's code (S) isn't re-checked:** the VATs list has no code column. New VATs get code S.
-- **The negative test** (same company, different ZIP → manual review) is unit-tested on the matcher
-  but hasn't been run against Fakturama.
 - **No scrolling in tables:** only visible rows are read. Searches narrow the lists down, and the
   samples have at most 3 lines.
 - **Launching Fakturama** is out of scope (it must be running, English UI, maximized).
-- **No photos or skewed scans were tried**, only rendered images.
 
 ## If I had 3 more hours
 
@@ -199,8 +213,7 @@ The timing block above is printed and written to `run.log` at the end of every r
    would be linked to the stopped one so the evidence stays together. About 45 min plus a live test.
 2. **Duplicate-order guard:** before opening a New Order, search Data › Documents for the external
    reference and stop for manual review if it's already there, so an image can't be invoiced twice.
-3. **Live runs of `order_02` / `order_03`**, opening New Contact from the toolbar if needed, then a
-   recorded clean run on a fresh database and the negative ZIP-conflict test.
+3. **Live runs of more Orders.**
 4. **Table scrolling** for long orders and large lists.
 5. **Less OCR in verification:** reopen saved documents and read their fields via UIA, keeping OCR
    for choosing rows only.

@@ -23,9 +23,8 @@ order image ─► LLM extraction (1 call, cached) ─► validation ─► (1 r
             artifacts/<run-id>/: extracted.json · run.log · NN_<step>.png · summary.json
 ```
 
-**Result.** End to end `status: ok` in 63.5 s with all master data selected; the create paths
-(Debtor with two addresses, payment method, VAT, products) were verified live as well. 137 offline
-tests.
+**Result.** End to end `status: ok` in 128.5 s creating all master data (Debtor with two addresses,
+payment method, VAT, products) and 61.6 s selecting it on the next run. 137 offline tests.
 
 ## 2. Extraction (image → data)
 
@@ -151,7 +150,7 @@ stopping step, the entities selected or created, every step's verification, warn
   arrow-key dates, closing saved editors, and the runner's exit codes (ok / manual review / error).
 
 **Live tests against Fakturama** (run by hand; evidence in `artifacts/<run-id>/`):
-- end to end on the sample with all master data existing: `status: ok` in 63.5 s;
+- end to end on the sample: `status: ok` in 128.5 s creating all master data, then 61.6 s selecting it;
 - create paths (new Debtor with two addresses, payment method, VAT, products) on an empty database,
   stage by stage;
 - recreation after master data was deleted by hand (products; payment method for an existing Debtor).
@@ -170,7 +169,7 @@ case, which is covered by unit tests only.
 | Fixed coordinates / image templates | Break on resolution, DPI or layout changes; ruled out by the brief |
 | UIA only | Impossible: tables expose no rows and tabs can't be selected through UIA |
 | ValuePattern for all input | Fast, but shown not to persist in SWT |
-| Full-window UIA reads everywhere | Simple, but 0.7–0.9 s each; pane-scoped reads and `FindFirst` cut a run from 156 s to 63.5 s with every check kept |
+| Full-window UIA reads everywhere | Simple, but 0.7–0.9 s each; pane-scoped reads and `FindFirst` cut a run from 156 s to 61.6 s with every check kept |
 
 ## 8. Risks & mitigations
 
