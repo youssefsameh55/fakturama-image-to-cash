@@ -48,9 +48,9 @@ Timing printed at the end of each run (also in `run.log`):
 **Evidence of these runs:** the annotated per-step screenshots, `summary.json` and `run.log` are in
 `sample_screenshots/20261108-041316/` (created) and `sample_screenshots/20261108-041854/` (selected), 26 screenshots
 each. Every run writes to `artifacts/<run-id>/` (`<run-id>` = start time, `YYYYMMDD-HHMMSS`); the
-launcher's **Open last run folder** opens the newest one. `artifacts/` is git-ignored. A screen recording of both runs is in
+launcher's **Open last run folder** opens the newest one. `artifacts/` is git-ignored. A screen recording of the full run is in
 `recordings/Fakturama.mp4`. It is stored with Git LFS and not downloaded on clone (to keep pulls
-small); fetch it with `git lfs pull --include="recordings/*" --exclude=""`.
+small); fetch it with `git lfs pull --include="recordings/*" --exclude=""` or view it here [Google Drive](https://drive.google.com/file/d/1rJOnvj6lBz66e6pKAyxiIlWRRSp0wJ1C/view?usp=sharing).
 
 ## Setup
 
@@ -78,7 +78,7 @@ press **Start**.
 
 ![Launcher window: image picked, ready to start](docs/launcher.png)
 
- It runs the same `python -m i2c run <image>` as below in a subprocess, shows its log
+It runs the same `python -m i2c run <image>` as below in a subprocess, shows its log
 live, minimizes itself during the run so it doesn't cover Fakturama, and shows the result in colour
 (done / manual review / error). **Stop** ends the run and leaves Fakturama as it is; **Open last run
 folder** opens the newest `artifacts/<run-id>/`.

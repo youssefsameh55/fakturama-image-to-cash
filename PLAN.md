@@ -343,7 +343,7 @@ Result type: `NONE | EXACT(row) | AMBIGUOUS | CONFLICT`. Fully unit-tested.
 
 ```
 fakturama-image-to-cash/
-├─ README.md  DESIGN.md  PLAN.md  CLAUDE.md  Launch.bat
+├─ README.md  DESIGN.md  Design.pdf  PLAN.md  Launch.bat
 ├─ pyproject.toml  requirements.txt  .env.example  .gitignore
 ├─ config/settings.yaml
 ├─ samples/order_01.png
