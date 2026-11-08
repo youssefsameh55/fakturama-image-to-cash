@@ -9,7 +9,7 @@
 
 ![Pipeline: one LLM extraction with validation, then five verified UI stages; anything invalid, ambiguous or conflicting goes to manual review](docs/pipeline.png)
 
-**Validated in a prototype:** end to end `status: ok` in 128.5 s creating all master data and 61.6 s selecting it on the next run, all create paths verified live, 137 offline tests.
+**Validated in a prototype:** end to end `status: ok` in 132.5 s creating all master data and 64.1 s selecting it on the next run, all create paths verified live, 137 offline tests.
 
 ## 2. Image-extraction strategy
 
@@ -55,7 +55,7 @@ OCR tolerances (the visible prefix of a cut-off cell, O/0 and I/1 look-alikes) o
 
 ## 5. Testing strategy
 
-**Offline (137 tests, no Fakturama):** money math, every validation rule and matching outcome, the extraction service against a fake LLM, the runner and UI helpers on fake controls, and replays of real UIA dumps and OCR captures from live failures. **Live (by hand):** end to end creating all master data (128.5 s, run `20261108-041316`) and selecting it (61.6 s, run `20261108-041854`), every create path on an empty database, and recreation after deletions; screenshots in `sample_screenshots/`, a screen recording in `recordings/Fakturama.mp4`. Each live failure becomes a replay test.
+**Offline (137 tests, no Fakturama):** money math, every validation rule and matching outcome, the extraction service against a fake LLM, the runner and UI helpers on fake controls, and replays of real UIA dumps and OCR captures from live failures. **Live (by hand):** end to end creating all master data (132.5 s, run `20261108-060146`) and selecting it (64.1 s, run `20261108-060651`), every create path on an empty database, and recreation after deletions; screenshots in `sample_screenshots/`, a screen recording in `recordings/Fakturama.mp4`. Each live failure becomes a replay test.
 
 ## 6. Trade-offs and alternatives
 

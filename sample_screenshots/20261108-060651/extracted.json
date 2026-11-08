@@ -1,0 +1,64 @@
+{
+  "external_reference": "WEB-2026-0714-A17",
+  "order_date": "2026-07-14",
+  "customer_id": "CUST-1007",
+  "currency": "EUR",
+  "debtor": {
+    "company": "Northstar Office GmbH",
+    "alias": "NORTHSTAR-BERLIN",
+    "first_name": "Marta",
+    "last_name": "Klein",
+    "email": "marta.klein@example.test",
+    "phone": "+49 30 5550 1420",
+    "billing_address": {
+      "name": "Northstar Office GmbH",
+      "street": "Friedrichstrasse 88",
+      "zip": "10117",
+      "city": "Berlin",
+      "country": "Germany",
+      "additional": null
+    },
+    "delivery_address": {
+      "name": "Northstar Office Warehouse",
+      "street": "Beusselstrasse 44",
+      "zip": "10553",
+      "city": "Berlin",
+      "country": "Germany",
+      "additional": null
+    }
+  },
+  "payment": {
+    "method": "Bank Transfer",
+    "status": "PAID",
+    "payment_date": "2026-07-18"
+  },
+  "items": [
+    {
+      "position": 1,
+      "sku": "CHR-ERG-01",
+      "description": "Ergonomic Desk Chair",
+      "quantity": "2",
+      "unit": "pcs",
+      "unit_net_price": "250.00",
+      "discount_percent": "10",
+      "vat_percent": "19",
+      "line_net_total": "450.00"
+    },
+    {
+      "position": 2,
+      "sku": "MAT-DESK-02",
+      "description": "Anti-Fatigue Desk Mat",
+      "quantity": "3",
+      "unit": "pcs",
+      "unit_net_price": "40.00",
+      "discount_percent": "0",
+      "vat_percent": "19",
+      "line_net_total": "120.00"
+    }
+  ],
+  "totals": {
+    "net": "570.00",
+    "vat": "108.30",
+    "gross": "678.30"
+  }
+}

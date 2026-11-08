@@ -17,10 +17,10 @@ leaves Fakturama as it is.
 
   | Case | Run | Result | Time |
   |---|---|---|---|
-  | All master data **created** (Debtor with two addresses, payment method, VAT, two products) | `20261108-041316` | PO000018 + INV000013, paid | **128.5 s** |
-  | All master data **selected** (same image, run again) | `20261108-041854` | PO000019 + INV000014, paid | **61.6 s** |
+  | All master data **created** (Debtor with two addresses, payment method, VAT, two products) | `20261108-060146` | PO000022 + INV000017, paid | **132.5 s** |
+  | All master data **selected** (same image, run again) | `20261108-060651` | PO000023 + INV000018, paid | **64.1 s** |
 
-  Both ran from a saved extraction (`--from-json`, no LLM call). The first working version took 156 s with
+  Both used the cached extraction (no LLM call). The first working version took 156 s with
   everything selected and 188 s with everything created; every required check was kept while
   speeding it up (see "What the live runs showed").
 - **Create paths were also verified one by one:** stage by stage on an empty database, and again
@@ -34,19 +34,19 @@ Timing printed at the end of each run (also in `run.log`):
 
 ```
   status      : ok  (exit 0)                         status      : ok  (exit 0)
-  order       : PO000018    invoice: INV000013       order       : PO000019    invoice: INV000014
+  order       : PO000022    invoice: INV000017       order       : PO000023    invoice: INV000018
   entities    : all created                          entities    : all selected
-  prepare     :     4.6 s   (JSON + attach)          prepare     :     4.1 s   (JSON + attach)
-  order       :     8.5 s                            order       :     7.8 s
-  debtor      :    45.0 s                            debtor      :     6.9 s
-  products    :    39.9 s                            products    :    12.7 s
-  save_order  :    13.3 s                            save_order  :    12.0 s
-  invoice     :    17.2 s                            invoice     :    17.8 s
-  TOTAL       :   128.5 s                            TOTAL       :    61.6 s
+  prepare     :     6.1 s   (cache + attach)         prepare     :     5.5 s   (cache + attach)
+  order       :     7.7 s                            order       :     7.1 s
+  debtor      :    46.8 s                            debtor      :     7.5 s
+  products    :    40.8 s                            products    :    13.1 s
+  save_order  :    13.8 s                            save_order  :    12.2 s
+  invoice     :    17.2 s                            invoice     :    18.6 s
+  TOTAL       :   132.5 s                            TOTAL       :    64.1 s
 ```
 
 **Evidence of these runs:** the annotated per-step screenshots, `summary.json` and `run.log` are in
-`sample_screenshots/20261108-041316/` (created) and `sample_screenshots/20261108-041854/` (selected), 26 screenshots
+`sample_screenshots/20261108-060146/` (created) and `sample_screenshots/20261108-060651/` (selected), 26 screenshots
 each. Every run writes to `artifacts/<run-id>/` (`<run-id>` = start time, `YYYYMMDD-HHMMSS`); the
 launcher's **Open last run folder** opens the newest one. `artifacts/` is git-ignored. A screen recording of the full run is in
 `recordings/Fakturama.mp4`. It is stored with Git LFS and not downloaded on clone (to keep pulls
@@ -183,7 +183,7 @@ The timing block above is printed and written to `run.log` at the end of every r
   already in the order; a Fakturama dialog during Save stops the run with its text.
 - **Speed:** about 75 % of the first runs went into reading the UI tree. Pane-scoped reads, UIA
   `FindFirst`, one cache request per snapshot and background screenshot encoding took the
-  all-selected run from 156 s to 61.6 s without dropping a check.
+  all-selected run from 156 s to about 62–64 s without dropping a check.
 - **Open editors slow everything down.** The first all-created run took 188 s: with five saved
   editors left open, each UIA read cost ~260 ms instead of ~100–150 ms. Saved master-data editors
   (payment method, Debtor, VAT, product) are now closed with Ctrl+F4 right after their save is
@@ -192,7 +192,7 @@ The timing block above is printed and written to `run.log` at the end of every r
 - **Dialog lookups walked the whole desktop.** Waiting for a selector dialog to open or close
   checked every window on the desktop through UIA, every 0.1 s. Fakturama's own windows are now
   found through Win32 by process id; a new product line went from ~23 s to ~13 s. Together with
-  closing editors, the all-created run went from 188 s to 128.5 s.
+  closing editors, the all-created run went from 188 s to about 128–133 s.
 - **Screenshots are cheap:** 26 per run at ~0.1 s each (about 2 % of a run), so they are always on.
 
 ## Skipped / not implemented

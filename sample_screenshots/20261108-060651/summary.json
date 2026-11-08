@@ -1,0 +1,724 @@
+{
+  "status": "ok",
+  "started": "2026-11-08T06:06:56",
+  "steps": [
+    {
+      "step": "order.open_order",
+      "status": "ok",
+      "message": "New Order editor open, No. PO000023 (kept as proposed)",
+      "duration_s": 1.36,
+      "screenshot": "01_order_open_order.png",
+      "cost": {
+        "uia": {
+          "count": 6,
+          "seconds": 1.16
+        },
+        "ocr": {
+          "count": 0,
+          "seconds": 0.0
+        },
+        "wait": {
+          "count": 0,
+          "seconds": 0.0
+        }
+      }
+    },
+    {
+      "step": "order.set_header",
+      "status": "ok",
+      "message": "Date=2026-07-14 Cust.Ref.=WEB-2026-0714-A17 (read back)",
+      "duration_s": 3.5,
+      "screenshot": "02_order_set_header.png",
+      "cost": {
+        "uia": {
+          "count": 3,
+          "seconds": 0.61
+        },
+        "ocr": {
+          "count": 0,
+          "seconds": 0.0
+        },
+        "wait": {
+          "count": 0,
+          "seconds": 0.0
+        }
+      }
+    },
+    {
+      "step": "order.set_modes",
+      "status": "ok",
+      "message": "price mode Net, VAT mode With VAT (read back)",
+      "duration_s": 1.83,
+      "screenshot": "03_order_set_modes.png",
+      "cost": {
+        "uia": {
+          "count": 2,
+          "seconds": 0.24
+        },
+        "ocr": {
+          "count": 0,
+          "seconds": 0.0
+        },
+        "wait": {
+          "count": 0,
+          "seconds": 0.0
+        }
+      }
+    },
+    {
+      "step": "order.verify_header",
+      "status": "ok",
+      "message": "header re-read OK: No.=PO000023, Date=2026-07-14, Cust.Ref.=WEB-2026-0714-A17, price mode=Net, VAT mode=With VAT",
+      "duration_s": 0.39,
+      "screenshot": "04_order_verify_header.png",
+      "cost": {
+        "uia": {
+          "count": 2,
+          "seconds": 0.28
+        },
+        "ocr": {
+          "count": 0,
+          "seconds": 0.0
+        },
+        "wait": {
+          "count": 0,
+          "seconds": 0.0
+        }
+      }
+    },
+    {
+      "step": "debtor.find_debtor",
+      "status": "ok",
+      "message": "existing debtor selected: {'col0': '1', 'No.': 'CUST000014', 'First Name': 'Marta', 'Name': 'Klein', 'Company': 'Northstar Office GmbH', 'ZIP': '10117', 'City': 'Berlin', 'address type': 'BILLING', 'additional name': '', 'local consul...': '', 'col10': ''}",
+      "duration_s": 2.14,
+      "screenshot": "05_debtor_find_debtor.png",
+      "cost": {
+        "uia": {
+          "count": 12,
+          "seconds": 0.74
+        },
+        "ocr": {
+          "count": 2,
+          "seconds": 0.06
+        },
+        "wait": {
+          "count": 1,
+          "seconds": 0.1
+        }
+      }
+    },
+    {
+      "step": "debtor.ensure_payment_method",
+      "status": "ok",
+      "message": "payment method 'Bank Transfer' exists",
+      "duration_s": 2.02,
+      "screenshot": "06_debtor_ensure_payment_method.png",
+      "cost": {
+        "uia": {
+          "count": 5,
+          "seconds": 1.42
+        },
+        "ocr": {
+          "count": 20,
+          "seconds": 0.13
+        },
+        "wait": {
+          "count": 1,
+          "seconds": 0.1
+        }
+      }
+    },
+    {
+      "step": "debtor.create_debtor",
+      "status": "ok",
+      "message": "skipped: debtor already exists",
+      "duration_s": 0.11,
+      "screenshot": "07_debtor_create_debtor.png",
+      "cost": {
+        "uia": {
+          "count": 0,
+          "seconds": 0.0
+        },
+        "ocr": {
+          "count": 0,
+          "seconds": 0.0
+        },
+        "wait": {
+          "count": 0,
+          "seconds": 0.0
+        }
+      }
+    },
+    {
+      "step": "debtor.select_created_debtor",
+      "status": "ok",
+      "message": "skipped: debtor was selected directly",
+      "duration_s": 0.12,
+      "screenshot": "08_debtor_select_created_debtor.png",
+      "cost": {
+        "uia": {
+          "count": 0,
+          "seconds": 0.0
+        },
+        "ocr": {
+          "count": 0,
+          "seconds": 0.0
+        },
+        "wait": {
+          "count": 0,
+          "seconds": 0.0
+        }
+      }
+    },
+    {
+      "step": "debtor.verify_addresses",
+      "status": "ok",
+      "message": "order shows the source invoice and delivery address",
+      "duration_s": 3.09,
+      "screenshot": "09_debtor_verify_addresses.png",
+      "cost": {
+        "uia": {
+          "count": 23,
+          "seconds": 2.45
+        },
+        "ocr": {
+          "count": 2,
+          "seconds": 0.01
+        },
+        "wait": {
+          "count": 0,
+          "seconds": 0.0
+        }
+      }
+    },
+    {
+      "step": "products.check_net_mode",
+      "status": "ok",
+      "message": "order is in Net mode",
+      "duration_s": 0.34,
+      "screenshot": "10_products_check_net_mode.png",
+      "cost": {
+        "uia": {
+          "count": 3,
+          "seconds": 0.24
+        },
+        "ocr": {
+          "count": 0,
+          "seconds": 0.0
+        },
+        "wait": {
+          "count": 0,
+          "seconds": 0.0
+        }
+      }
+    },
+    {
+      "step": "products.ensure_vats",
+      "status": "ok",
+      "message": "VAT 19% exists",
+      "duration_s": 1.84,
+      "screenshot": "11_products_ensure_vats.png",
+      "cost": {
+        "uia": {
+          "count": 5,
+          "seconds": 1.3
+        },
+        "ocr": {
+          "count": 14,
+          "seconds": 0.1
+        },
+        "wait": {
+          "count": 1,
+          "seconds": 0.1
+        }
+      }
+    },
+    {
+      "step": "products.add_line_1",
+      "status": "ok",
+      "message": "line for CHR-ERG-01 added (selector picked the item number itself; selected product)",
+      "duration_s": 2.24,
+      "screenshot": "12_products_add_line_1.png",
+      "cost": {
+        "uia": {
+          "count": 17,
+          "seconds": 1.32
+        },
+        "ocr": {
+          "count": 21,
+          "seconds": 0.17
+        },
+        "wait": {
+          "count": 1,
+          "seconds": 0.1
+        }
+      }
+    },
+    {
+      "step": "products.set_line_1",
+      "status": "ok",
+      "message": "CHR-ERG-01: qty 2 x 250.00 - 10% @ VAT 19% = 450.00 (read back)",
+      "duration_s": 3.38,
+      "screenshot": "13_products_set_line_1.png",
+      "cost": {
+        "uia": {
+          "count": 17,
+          "seconds": 0.44
+        },
+        "ocr": {
+          "count": 95,
+          "seconds": 0.47
+        },
+        "wait": {
+          "count": 10,
+          "seconds": 1.01
+        }
+      }
+    },
+    {
+      "step": "products.add_line_2",
+      "status": "ok",
+      "message": "line for MAT-DESK-02 added (selector picked the item number itself; selected product)",
+      "duration_s": 2.55,
+      "screenshot": "14_products_add_line_2.png",
+      "cost": {
+        "uia": {
+          "count": 17,
+          "seconds": 1.32
+        },
+        "ocr": {
+          "count": 75,
+          "seconds": 0.35
+        },
+        "wait": {
+          "count": 1,
+          "seconds": 0.1
+        }
+      }
+    },
+    {
+      "step": "products.set_line_2",
+      "status": "ok",
+      "message": "MAT-DESK-02: qty 3 x 40.00 - 0% @ VAT 19% = 120.00 (read back)",
+      "duration_s": 2.73,
+      "screenshot": "15_products_set_line_2.png",
+      "cost": {
+        "uia": {
+          "count": 15,
+          "seconds": 0.4
+        },
+        "ocr": {
+          "count": 94,
+          "seconds": 0.47
+        },
+        "wait": {
+          "count": 10,
+          "seconds": 1.0
+        }
+      }
+    },
+    {
+      "step": "save_order.check_order",
+      "status": "ok",
+      "message": "2 lines, addresses, discount 0 %, free shipping; totals net 570.00 vat 108.30 gross 678.30 = source",
+      "duration_s": 4.47,
+      "screenshot": "16_save_order_check_order.png",
+      "cost": {
+        "uia": {
+          "count": 31,
+          "seconds": 3.5
+        },
+        "ocr": {
+          "count": 38,
+          "seconds": 0.18
+        },
+        "wait": {
+          "count": 1,
+          "seconds": 0.1
+        }
+      }
+    },
+    {
+      "step": "save_order.save_order",
+      "status": "ok",
+      "message": "order PO000023 saved (tab 'PO000023'); Cust.Ref. WEB-2026-0714-A17 and Date 2026-07-14 re-read exactly",
+      "duration_s": 1.67,
+      "screenshot": "17_save_order_save_order.png",
+      "cost": {
+        "uia": {
+          "count": 10,
+          "seconds": 1.45
+        },
+        "ocr": {
+          "count": 0,
+          "seconds": 0.0
+        },
+        "wait": {
+          "count": 0,
+          "seconds": 0.0
+        }
+      }
+    },
+    {
+      "step": "save_order.verify_in_documents",
+      "status": "ok",
+      "message": "Documents: P0000023 Jul 14, 2026 WEB-2026 -07144... open $678.30",
+      "duration_s": 4.66,
+      "screenshot": "19_save_order_verify_in_documents.png",
+      "cost": {
+        "uia": {
+          "count": 10,
+          "seconds": 2.53
+        },
+        "ocr": {
+          "count": 8,
+          "seconds": 0.16
+        },
+        "wait": {
+          "count": 11,
+          "seconds": 0.61
+        }
+      }
+    },
+    {
+      "step": "save_order.create_invoice",
+      "status": "ok",
+      "message": "invoice editor opened from the order's follow-up button (No. INV000018)",
+      "duration_s": 1.41,
+      "screenshot": "20_save_order_create_invoice.png",
+      "cost": {
+        "uia": {
+          "count": 6,
+          "seconds": 1.11
+        },
+        "ocr": {
+          "count": 0,
+          "seconds": 0.0
+        },
+        "wait": {
+          "count": 0,
+          "seconds": 0.0
+        }
+      }
+    },
+    {
+      "step": "invoice.check_invoice",
+      "status": "ok",
+      "message": "copied from order: Cust.Ref., Order Date 2026-07-14, Net / With VAT, invoice + delivery address, 2 lines, totals 570.00 / 108.30 / 678.30",
+      "duration_s": 5.0,
+      "screenshot": "21_invoice_check_invoice.png",
+      "cost": {
+        "uia": {
+          "count": 25,
+          "seconds": 3.18
+        },
+        "ocr": {
+          "count": 4,
+          "seconds": 0.07
+        },
+        "wait": {
+          "count": 1,
+          "seconds": 0.1
+        }
+      }
+    },
+    {
+      "step": "invoice.set_payment",
+      "status": "ok",
+      "message": "payment 'Bank Transfer', paid at 2026-07-18 value 678.30 (read back)",
+      "duration_s": 4.45,
+      "screenshot": "22_invoice_set_payment.png",
+      "cost": {
+        "uia": {
+          "count": 10,
+          "seconds": 1.13
+        },
+        "ocr": {
+          "count": 0,
+          "seconds": 0.0
+        },
+        "wait": {
+          "count": 10,
+          "seconds": 0.51
+        }
+      }
+    },
+    {
+      "step": "invoice.save_invoice",
+      "status": "ok",
+      "message": "invoice INV000018 saved (tab 'INV000018'); Cust.Ref. and paid re-read exactly",
+      "duration_s": 1.92,
+      "screenshot": "23_invoice_save_invoice.png",
+      "cost": {
+        "uia": {
+          "count": 10,
+          "seconds": 1.68
+        },
+        "ocr": {
+          "count": 0,
+          "seconds": 0.0
+        },
+        "wait": {
+          "count": 0,
+          "seconds": 0.0
+        }
+      }
+    },
+    {
+      "step": "invoice.verify_documents",
+      "status": "ok",
+      "message": "invoice INV000018: 'paid' total $678.30; order PO000023 still 'open' total $678.30",
+      "duration_s": 7.23,
+      "screenshot": "26_invoice_verify_documents.png",
+      "cost": {
+        "uia": {
+          "count": 16,
+          "seconds": 3.82
+        },
+        "ocr": {
+          "count": 16,
+          "seconds": 0.39
+        },
+        "wait": {
+          "count": 12,
+          "seconds": 0.71
+        }
+      }
+    }
+  ],
+  "stages_done": [
+    "order",
+    "debtor",
+    "products",
+    "save_order",
+    "invoice"
+  ],
+  "stage_durations_s": {
+    "order": 7.1,
+    "debtor": 7.5,
+    "products": 13.1,
+    "save_order": 12.2,
+    "invoice": 18.6
+  },
+  "duration_s": 58.5,
+  "results": {
+    "entities": {
+      "debtor": "selected",
+      "payment_method": "selected",
+      "vat": {
+        "VAT 19%": "selected"
+      },
+      "product": {
+        "CHR-ERG-01": "selected",
+        "MAT-DESK-02": "selected"
+      }
+    },
+    "order_no": "PO000023",
+    "_save_button": "uia_element_info.UIAElementInfo - 'Save the current contents', ",
+    "debtor_search": {
+      "query": "Northstar Office GmbH",
+      "rows": [
+        {
+          "col0": "1",
+          "No.": "CUST000014",
+          "First Name": "Marta",
+          "Name": "Klein",
+          "Company": "Northstar Office GmbH",
+          "ZIP": "10117",
+          "City": "Berlin",
+          "address type": "BILLING",
+          "additional name": "",
+          "local consul...": "",
+          "col10": ""
+        }
+      ],
+      "outcome": "exact"
+    },
+    "order_tab": "PO000023",
+    "order_document": {
+      "col0": "",
+      "Document": "P0000023",
+      "Date": "Jul 14, 2026",
+      "Name": "Northstar Office G...",
+      "Cust.Ref.": "WEB-2026 -07144...",
+      "State": "open",
+      "Total": "$678.30",
+      "Printed": ""
+    },
+    "warnings": [
+      "Documents list Cust.Ref. OCR'd as 'WEB-2026 -07144...' (exact value checked in the editor)",
+      "Documents list Cust.Ref. OCR'd as 'WEB-2026 -07144...' (exact value checked in the editor)"
+    ],
+    "invoice_no": "INV000018",
+    "invoice_tab": "INV000018",
+    "invoice_document": {
+      "col0": "",
+      "Document": "INV000018",
+      "Date": "Nov 8, 2026",
+      "Name": "Northstar Office G...",
+      "Cust.Ref.": "WEB-2026-0714-A...",
+      "State": "paid",
+      "Total": "$678.30",
+      "Printed": ""
+    }
+  },
+  "total_s": 64.1,
+  "prepare_s": 5.5,
+  "perf": {
+    "evidence_capture": {
+      "count": 26,
+      "seconds": 2.7,
+      "avg_ms": 104.0
+    },
+    "ocr_pass": {
+      "count": 389,
+      "seconds": 2.56,
+      "avg_ms": 6.6
+    },
+    "snapshot_from:<lambda>": {
+      "count": 2,
+      "seconds": 0.0,
+      "avg_ms": 0.0
+    },
+    "snapshot_from:__enter__": {
+      "count": 6,
+      "seconds": 0.0,
+      "avg_ms": 0.0
+    },
+    "snapshot_from:__exit__": {
+      "count": 3,
+      "seconds": 0.0,
+      "avg_ms": 0.0
+    },
+    "snapshot_from:_add_line": {
+      "count": 6,
+      "seconds": 0.0,
+      "avg_ms": 0.0
+    },
+    "snapshot_from:_editor": {
+      "count": 8,
+      "seconds": 0.0,
+      "avg_ms": 0.0
+    },
+    "snapshot_from:_set_line": {
+      "count": 2,
+      "seconds": 0.0,
+      "avg_ms": 0.0
+    },
+    "snapshot_from:_vat_rows": {
+      "count": 1,
+      "seconds": 0.0,
+      "avg_ms": 0.0
+    },
+    "snapshot_from:check_net_mode": {
+      "count": 1,
+      "seconds": 0.0,
+      "avg_ms": 0.0
+    },
+    "snapshot_from:check_order": {
+      "count": 3,
+      "seconds": 0.0,
+      "avg_ms": 0.0
+    },
+    "snapshot_from:create_invoice": {
+      "count": 2,
+      "seconds": 0.0,
+      "avg_ms": 0.0
+    },
+    "snapshot_from:editor_ready": {
+      "count": 1,
+      "seconds": 0.0,
+      "avg_ms": 0.0
+    },
+    "snapshot_from:ensure_payment_method": {
+      "count": 1,
+      "seconds": 0.0,
+      "avg_ms": 0.0
+    },
+    "snapshot_from:find_debtor": {
+      "count": 3,
+      "seconds": 0.0,
+      "avg_ms": 0.0
+    },
+    "snapshot_from:find_documents": {
+      "count": 3,
+      "seconds": 0.0,
+      "avg_ms": 0.0
+    },
+    "snapshot_from:inline_editor": {
+      "count": 26,
+      "seconds": 0.0,
+      "avg_ms": 0.0
+    },
+    "snapshot_from:open_order": {
+      "count": 1,
+      "seconds": 0.0,
+      "avg_ms": 0.0
+    },
+    "snapshot_from:order_header": {
+      "count": 1,
+      "seconds": 0.0,
+      "avg_ms": 0.0
+    },
+    "snapshot_from:order_modes": {
+      "count": 1,
+      "seconds": 0.0,
+      "avg_ms": 0.0
+    },
+    "snapshot_from:read_items": {
+      "count": 4,
+      "seconds": 0.0,
+      "avg_ms": 0.0
+    },
+    "snapshot_from:save_order": {
+      "count": 2,
+      "seconds": 0.0,
+      "avg_ms": 0.0
+    },
+    "snapshot_from:show_address_tab": {
+      "count": 18,
+      "seconds": 0.0,
+      "avg_ms": 0.0
+    },
+    "snapshot_from:verify_order_addresses": {
+      "count": 4,
+      "seconds": 0.0,
+      "avg_ms": 0.0
+    },
+    "snapshot_from:verify_order_header": {
+      "count": 1,
+      "seconds": 0.0,
+      "avg_ms": 0.0
+    },
+    "snapshot_from:wait_until": {
+      "count": 12,
+      "seconds": 0.0,
+      "avg_ms": 0.0
+    },
+    "uia_dialog_lookup": {
+      "count": 14,
+      "seconds": 0.72,
+      "avg_ms": 51.6
+    },
+    "uia_find_first": {
+      "count": 113,
+      "seconds": 10.26,
+      "avg_ms": 90.8
+    },
+    "uia_names": {
+      "count": 6,
+      "seconds": 2.51,
+      "avg_ms": 417.6
+    },
+    "uia_snapshot_cached": {
+      "count": 112,
+      "seconds": 16.85,
+      "avg_ms": 150.4
+    },
+    "wait_idle": {
+      "count": 60,
+      "seconds": 4.53,
+      "avg_ms": 75.5
+    }
+  }
+}

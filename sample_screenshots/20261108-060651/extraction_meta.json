@@ -1,0 +1,14 @@
+{
+  "image": "C:\\dev\\fakturama-image-to-cash\\samples\\order_01.png",
+  "image_sha256": "a698eed53499c225a5a961afc875656bb1ef31b3e314d1709965f670b7c94b61",
+  "provider": "gemini",
+  "model": "gemini-3.1-flash-lite",
+  "prompt_version": "v1",
+  "cache_key": "3bdb75b807c90fbe9a087fcfafd051caa1769dc73edf0db78dd45113122b7ca9",
+  "cache_hit": true,
+  "attempts": 0,
+  "input_tokens": 0,
+  "output_tokens": 0,
+  "latency_s": 0.0,
+  "warnings": []
+}

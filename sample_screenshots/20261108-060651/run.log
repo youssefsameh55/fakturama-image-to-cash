@@ -1,0 +1,505 @@
+06:06:52 INFO    i2c.extract.service: extraction cache hit (3bdb75b807c9)
+06:06:56 INFO    i2c.ui.app: attached to 'Fakturama - C:\\Users\\YOUSS' (pid 1724)
+06:06:56 INFO    i2c.flow.runner: === stage order
+06:06:56 INFO    i2c.flow.runner: --- order.open_order
+06:06:57 INFO    i2c.ui.evidence: evidence 01_order_open_order.png: order.open_order: New Order editor open, No. PO000023 (kept as proposed)
+06:06:57 INFO    i2c.flow.runner: ok order.open_order (1.4 s; uia 6 x = 1.2 s, ocr 0 x = 0.0 s, wait 0 x = 0.0 s): New Order editor open, No. PO000023 (kept as proposed)
+06:06:57 INFO    i2c.flow.runner: --- order.set_header
+06:06:58 DEBUG   i2c.ui.input: date widget field order: ['month', 'day', 'year']
+06:07:01 INFO    i2c.ui.evidence: evidence 02_order_set_header.png: order.set_header: Date=2026-07-14 Cust.Ref.=WEB-2026-0714-A17 (read back)
+06:07:01 INFO    i2c.flow.runner: ok order.set_header (3.5 s; uia 3 x = 0.6 s, ocr 0 x = 0.0 s, wait 0 x = 0.0 s): Date=2026-07-14 Cust.Ref.=WEB-2026-0714-A17 (read back)
+06:07:01 INFO    i2c.flow.runner: --- order.set_modes
+06:07:03 INFO    i2c.ui.evidence: evidence 03_order_set_modes.png: order.set_modes: price mode Net, VAT mode With VAT (read back)
+06:07:03 INFO    i2c.flow.runner: ok order.set_modes (1.8 s; uia 2 x = 0.2 s, ocr 0 x = 0.0 s, wait 0 x = 0.0 s): price mode Net, VAT mode With VAT (read back)
+06:07:03 INFO    i2c.flow.runner: --- order.verify_header
+06:07:03 INFO    i2c.ui.evidence: evidence 04_order_verify_header.png: order.verify_header: header re-read OK: No.=PO000023, Date=2026-07-14, Cust.Ref.=WEB-2026-0714-A17, price mode=Net, VAT mode=With VAT
+06:07:03 INFO    i2c.flow.runner: ok order.verify_header (0.4 s; uia 2 x = 0.3 s, ocr 0 x = 0.0 s, wait 0 x = 0.0 s): header re-read OK: No.=PO000023, Date=2026-07-14, Cust.Ref.=WEB-2026-0714-A17, price mode=Net, VAT mode=With VAT
+06:07:03 INFO    i2c.flow.runner: === stage debtor
+06:07:03 INFO    i2c.flow.runner: --- debtor.find_debtor
+06:07:04 DEBUG   asyncio: Using proactor: IocpProactor
+06:07:05 DEBUG   asyncio: Using proactor: IocpProactor
+06:07:05 INFO    i2c.flow.common: select_address table: 1 row(s) [{'col0': '1', 'No.': 'CUST000014', 'First Name': 'Marta', 'Name': 'Klein', 'Company': 'Northstar Office GmbH', 'ZIP': '10117', 'City': 'Berlin', 'address type': 'BILLING', 'additional name': '', 'local consul...': '', 'col10': ''}]
+06:07:05 INFO    i2c.ui.evidence: evidence 05_debtor_find_debtor.png: debtor.find_debtor: existing debtor selected: {'col0': '1', 'No.': 'CUST000014', 'First Name': 'Marta', 'Name': 'Klein', 'Company': 'Northstar Office GmbH', 'ZIP': '10117', 'City': 'Berlin', 'address type': 'BILLING', 'additional name': '', 'local consul...': '', 'col10': ''}
+06:07:05 INFO    i2c.flow.runner: ok debtor.find_debtor (2.1 s; uia 12 x = 0.7 s, ocr 2 x = 0.1 s, wait 1 x = 0.1 s): existing debtor selected: {'col0': '1', 'No.': 'CUST000014', 'First Name': 'Marta', 'Name': 'Klein', 'Company': 'Northstar Office GmbH', 'ZIP': '10117', 'City': 'Berlin', 'address type': 'BILLING', 'additional name': '', 'local consul...': '', 'col10': ''}
+06:07:05 INFO    i2c.flow.runner: --- debtor.ensure_payment_method
+06:07:07 DEBUG   asyncio: Using proactor: IocpProactor
+06:07:07 DEBUG   asyncio: Using proactor: IocpProactor
+06:07:07 DEBUG   asyncio: Using proactor: IocpProactor
+06:07:07 DEBUG   asyncio: Using proactor: IocpProactor
+06:07:07 DEBUG   asyncio: Using proactor: IocpProactor
+06:07:07 DEBUG   asyncio: Using proactor: IocpProactor
+06:07:07 DEBUG   asyncio: Using proactor: IocpProactor
+06:07:07 DEBUG   asyncio: Using proactor: IocpProactor
+06:07:07 DEBUG   asyncio: Using proactor: IocpProactor
+06:07:07 DEBUG   asyncio: Using proactor: IocpProactor
+06:07:07 DEBUG   asyncio: Using proactor: IocpProactor
+06:07:07 DEBUG   asyncio: Using proactor: IocpProactor
+06:07:07 DEBUG   asyncio: Using proactor: IocpProactor
+06:07:07 DEBUG   asyncio: Using proactor: IocpProactor
+06:07:07 DEBUG   asyncio: Using proactor: IocpProactor
+06:07:07 DEBUG   asyncio: Using proactor: IocpProactor
+06:07:07 DEBUG   asyncio: Using proactor: IocpProactor
+06:07:07 DEBUG   asyncio: Using proactor: IocpProactor
+06:07:07 DEBUG   asyncio: Using proactor: IocpProactor
+06:07:07 DEBUG   asyncio: Using proactor: IocpProactor
+06:07:07 INFO    i2c.flow.common: payments table: 2 row(s) [{'Standard': '', 'Name': 'Cash', 'Description': 'Pay Cash', 'Discount': '0%', 'Disc. Days': '0', 'Net Days': '0', 'col6': ''}, {'Standard': '', 'Name': 'Bank Transfer', 'Description': 'Bank Transfer', 'Discount': '0%', 'Disc. Days': '0', 'Net Days': '0', 'col6': ''}]
+06:07:07 INFO    i2c.ui.evidence: evidence 06_debtor_ensure_payment_method.png: debtor.ensure_payment_method: payment method 'Bank Transfer' exists
+06:07:07 INFO    i2c.flow.runner: ok debtor.ensure_payment_method (2.0 s; uia 5 x = 1.4 s, ocr 20 x = 0.1 s, wait 1 x = 0.1 s): payment method 'Bank Transfer' exists
+06:07:07 INFO    i2c.flow.runner: --- debtor.create_debtor
+06:07:07 INFO    i2c.ui.evidence: evidence 07_debtor_create_debtor.png: debtor.create_debtor: skipped: debtor already exists
+06:07:07 INFO    i2c.flow.runner: ok debtor.create_debtor (0.1 s; uia 0 x = 0.0 s, ocr 0 x = 0.0 s, wait 0 x = 0.0 s): skipped: debtor already exists
+06:07:07 INFO    i2c.flow.runner: --- debtor.select_created_debtor
+06:07:08 INFO    i2c.ui.evidence: evidence 08_debtor_select_created_debtor.png: debtor.select_created_debtor: skipped: debtor was selected directly
+06:07:08 INFO    i2c.flow.runner: ok debtor.select_created_debtor (0.1 s; uia 0 x = 0.0 s, ocr 0 x = 0.0 s, wait 0 x = 0.0 s): skipped: debtor was selected directly
+06:07:08 INFO    i2c.flow.runner: --- debtor.verify_addresses
+06:07:09 DEBUG   asyncio: Using proactor: IocpProactor
+06:07:10 DEBUG   asyncio: Using proactor: IocpProactor
+06:07:11 INFO    i2c.ui.evidence: evidence 09_debtor_verify_addresses.png: debtor.verify_addresses: order shows the source invoice and delivery address
+06:07:11 INFO    i2c.flow.runner: ok debtor.verify_addresses (3.1 s; uia 23 x = 2.5 s, ocr 2 x = 0.0 s, wait 0 x = 0.0 s): order shows the source invoice and delivery address
+06:07:11 INFO    i2c.flow.runner: === stage products
+06:07:11 INFO    i2c.flow.runner: --- products.check_net_mode
+06:07:11 INFO    i2c.ui.evidence: evidence 10_products_check_net_mode.png: products.check_net_mode: order is in Net mode
+06:07:11 INFO    i2c.flow.runner: ok products.check_net_mode (0.3 s; uia 3 x = 0.2 s, ocr 0 x = 0.0 s, wait 0 x = 0.0 s): order is in Net mode
+06:07:11 INFO    i2c.flow.runner: --- products.ensure_vats
+06:07:12 DEBUG   asyncio: Using proactor: IocpProactor
+06:07:13 DEBUG   asyncio: Using proactor: IocpProactor
+06:07:13 DEBUG   asyncio: Using proactor: IocpProactor
+06:07:13 DEBUG   asyncio: Using proactor: IocpProactor
+06:07:13 DEBUG   asyncio: Using proactor: IocpProactor
+06:07:13 DEBUG   asyncio: Using proactor: IocpProactor
+06:07:13 DEBUG   asyncio: Using proactor: IocpProactor
+06:07:13 DEBUG   asyncio: Using proactor: IocpProactor
+06:07:13 DEBUG   asyncio: Using proactor: IocpProactor
+06:07:13 DEBUG   asyncio: Using proactor: IocpProactor
+06:07:13 DEBUG   asyncio: Using proactor: IocpProactor
+06:07:13 DEBUG   asyncio: Using proactor: IocpProactor
+06:07:13 DEBUG   asyncio: Using proactor: IocpProactor
+06:07:13 DEBUG   asyncio: Using proactor: IocpProactor
+06:07:13 INFO    i2c.flow.common: vats table: 2 row(s) [{'Standard': '', 'Name': 'Tax-free', 'Description': 'Free of Tax', 'Value': '0.00 %', 'col4': ''}, {'Standard': '', 'Name': 'VAT 19%', 'Description': 'VAT 19%', 'Value': '19.00 %', 'col4': ''}]
+06:07:13 INFO    i2c.ui.evidence: evidence 11_products_ensure_vats.png: products.ensure_vats: VAT 19% exists
+06:07:13 INFO    i2c.flow.runner: ok products.ensure_vats (1.8 s; uia 5 x = 1.3 s, ocr 14 x = 0.1 s, wait 1 x = 0.1 s): VAT 19% exists
+06:07:13 INFO    i2c.flow.runner: --- products.add_line_1
+06:07:13 DEBUG   asyncio: Using proactor: IocpProactor
+06:07:14 DEBUG   asyncio: Using proactor: IocpProactor
+06:07:14 INFO    i2c.flow.common: items table: 0 row(s) []
+06:07:15 DEBUG   asyncio: Using proactor: IocpProactor
+06:07:15 DEBUG   asyncio: Using proactor: IocpProactor
+06:07:15 DEBUG   asyncio: Using proactor: IocpProactor
+06:07:15 DEBUG   asyncio: Using proactor: IocpProactor
+06:07:15 DEBUG   asyncio: Using proactor: IocpProactor
+06:07:15 DEBUG   asyncio: Using proactor: IocpProactor
+06:07:15 DEBUG   asyncio: Using proactor: IocpProactor
+06:07:15 DEBUG   asyncio: Using proactor: IocpProactor
+06:07:15 DEBUG   asyncio: Using proactor: IocpProactor
+06:07:15 DEBUG   asyncio: Using proactor: IocpProactor
+06:07:15 DEBUG   asyncio: Using proactor: IocpProactor
+06:07:15 DEBUG   asyncio: Using proactor: IocpProactor
+06:07:15 DEBUG   asyncio: Using proactor: IocpProactor
+06:07:15 DEBUG   asyncio: Using proactor: IocpProactor
+06:07:15 DEBUG   asyncio: Using proactor: IocpProactor
+06:07:15 DEBUG   asyncio: Using proactor: IocpProactor
+06:07:15 DEBUG   asyncio: Using proactor: IocpProactor
+06:07:15 DEBUG   asyncio: Using proactor: IocpProactor
+06:07:15 DEBUG   asyncio: Using proactor: IocpProactor
+06:07:15 INFO    i2c.ui.evidence: evidence 12_products_add_line_1.png: products.add_line_1: line for CHR-ERG-01 added (selector picked the item number itself; selected product)
+06:07:15 INFO    i2c.flow.runner: ok products.add_line_1 (2.2 s; uia 17 x = 1.3 s, ocr 21 x = 0.2 s, wait 1 x = 0.1 s): line for CHR-ERG-01 added (selector picked the item number itself; selected product)
+06:07:15 INFO    i2c.flow.runner: --- products.set_line_1
+06:07:15 DEBUG   asyncio: Using proactor: IocpProactor
+06:07:15 DEBUG   asyncio: Using proactor: IocpProactor
+06:07:15 DEBUG   asyncio: Using proactor: IocpProactor
+06:07:15 DEBUG   asyncio: Using proactor: IocpProactor
+06:07:15 DEBUG   asyncio: Using proactor: IocpProactor
+06:07:15 DEBUG   asyncio: Using proactor: IocpProactor
+06:07:15 DEBUG   asyncio: Using proactor: IocpProactor
+06:07:15 DEBUG   asyncio: Using proactor: IocpProactor
+06:07:15 DEBUG   asyncio: Using proactor: IocpProactor
+06:07:15 DEBUG   asyncio: Using proactor: IocpProactor
+06:07:15 DEBUG   asyncio: Using proactor: IocpProactor
+06:07:15 DEBUG   asyncio: Using proactor: IocpProactor
+06:07:15 DEBUG   asyncio: Using proactor: IocpProactor
+06:07:15 DEBUG   asyncio: Using proactor: IocpProactor
+06:07:15 DEBUG   asyncio: Using proactor: IocpProactor
+06:07:15 DEBUG   asyncio: Using proactor: IocpProactor
+06:07:15 DEBUG   asyncio: Using proactor: IocpProactor
+06:07:15 DEBUG   asyncio: Using proactor: IocpProactor
+06:07:15 DEBUG   asyncio: Using proactor: IocpProactor
+06:07:16 INFO    i2c.flow.products: edited Qty. via inline Edit (UIA)
+06:07:17 INFO    i2c.flow.products: cell editor still open after Enter; closing it with Esc (value already committed)
+06:07:17 DEBUG   asyncio: Using proactor: IocpProactor
+06:07:17 DEBUG   asyncio: Using proactor: IocpProactor
+06:07:17 DEBUG   asyncio: Using proactor: IocpProactor
+06:07:17 DEBUG   asyncio: Using proactor: IocpProactor
+06:07:17 DEBUG   asyncio: Using proactor: IocpProactor
+06:07:17 DEBUG   asyncio: Using proactor: IocpProactor
+06:07:17 DEBUG   asyncio: Using proactor: IocpProactor
+06:07:17 DEBUG   asyncio: Using proactor: IocpProactor
+06:07:17 DEBUG   asyncio: Using proactor: IocpProactor
+06:07:17 DEBUG   asyncio: Using proactor: IocpProactor
+06:07:17 DEBUG   asyncio: Using proactor: IocpProactor
+06:07:17 DEBUG   asyncio: Using proactor: IocpProactor
+06:07:17 DEBUG   asyncio: Using proactor: IocpProactor
+06:07:17 DEBUG   asyncio: Using proactor: IocpProactor
+06:07:17 DEBUG   asyncio: Using proactor: IocpProactor
+06:07:17 DEBUG   asyncio: Using proactor: IocpProactor
+06:07:17 DEBUG   asyncio: Using proactor: IocpProactor
+06:07:17 DEBUG   asyncio: Using proactor: IocpProactor
+06:07:17 DEBUG   asyncio: Using proactor: IocpProactor
+06:07:18 INFO    i2c.flow.products: edited Discount via inline Edit (UIA)
+06:07:18 DEBUG   asyncio: Using proactor: IocpProactor
+06:07:18 DEBUG   asyncio: Using proactor: IocpProactor
+06:07:18 DEBUG   asyncio: Using proactor: IocpProactor
+06:07:18 DEBUG   asyncio: Using proactor: IocpProactor
+06:07:18 DEBUG   asyncio: Using proactor: IocpProactor
+06:07:18 DEBUG   asyncio: Using proactor: IocpProactor
+06:07:18 DEBUG   asyncio: Using proactor: IocpProactor
+06:07:18 DEBUG   asyncio: Using proactor: IocpProactor
+06:07:18 DEBUG   asyncio: Using proactor: IocpProactor
+06:07:18 DEBUG   asyncio: Using proactor: IocpProactor
+06:07:18 DEBUG   asyncio: Using proactor: IocpProactor
+06:07:18 DEBUG   asyncio: Using proactor: IocpProactor
+06:07:18 DEBUG   asyncio: Using proactor: IocpProactor
+06:07:18 DEBUG   asyncio: Using proactor: IocpProactor
+06:07:18 DEBUG   asyncio: Using proactor: IocpProactor
+06:07:18 DEBUG   asyncio: Using proactor: IocpProactor
+06:07:18 DEBUG   asyncio: Using proactor: IocpProactor
+06:07:18 DEBUG   asyncio: Using proactor: IocpProactor
+06:07:18 DEBUG   asyncio: Using proactor: IocpProactor
+06:07:18 DEBUG   asyncio: Using proactor: IocpProactor
+06:07:18 DEBUG   asyncio: Using proactor: IocpProactor
+06:07:18 DEBUG   asyncio: Using proactor: IocpProactor
+06:07:18 DEBUG   asyncio: Using proactor: IocpProactor
+06:07:18 DEBUG   asyncio: Using proactor: IocpProactor
+06:07:18 DEBUG   asyncio: Using proactor: IocpProactor
+06:07:18 DEBUG   asyncio: Using proactor: IocpProactor
+06:07:18 DEBUG   asyncio: Using proactor: IocpProactor
+06:07:18 DEBUG   asyncio: Using proactor: IocpProactor
+06:07:18 DEBUG   asyncio: Using proactor: IocpProactor
+06:07:18 DEBUG   asyncio: Using proactor: IocpProactor
+06:07:18 DEBUG   asyncio: Using proactor: IocpProactor
+06:07:18 DEBUG   asyncio: Using proactor: IocpProactor
+06:07:18 DEBUG   asyncio: Using proactor: IocpProactor
+06:07:18 DEBUG   asyncio: Using proactor: IocpProactor
+06:07:18 DEBUG   asyncio: Using proactor: IocpProactor
+06:07:18 DEBUG   asyncio: Using proactor: IocpProactor
+06:07:18 DEBUG   asyncio: Using proactor: IocpProactor
+06:07:18 DEBUG   asyncio: Using proactor: IocpProactor
+06:07:18 DEBUG   asyncio: Using proactor: IocpProactor
+06:07:18 DEBUG   asyncio: Using proactor: IocpProactor
+06:07:18 DEBUG   asyncio: Using proactor: IocpProactor
+06:07:18 DEBUG   asyncio: Using proactor: IocpProactor
+06:07:18 DEBUG   asyncio: Using proactor: IocpProactor
+06:07:18 DEBUG   asyncio: Using proactor: IocpProactor
+06:07:18 DEBUG   asyncio: Using proactor: IocpProactor
+06:07:18 DEBUG   asyncio: Using proactor: IocpProactor
+06:07:18 DEBUG   asyncio: Using proactor: IocpProactor
+06:07:18 DEBUG   asyncio: Using proactor: IocpProactor
+06:07:18 DEBUG   asyncio: Using proactor: IocpProactor
+06:07:18 DEBUG   asyncio: Using proactor: IocpProactor
+06:07:18 DEBUG   asyncio: Using proactor: IocpProactor
+06:07:18 DEBUG   asyncio: Using proactor: IocpProactor
+06:07:18 DEBUG   asyncio: Using proactor: IocpProactor
+06:07:18 DEBUG   asyncio: Using proactor: IocpProactor
+06:07:18 DEBUG   asyncio: Using proactor: IocpProactor
+06:07:18 DEBUG   asyncio: Using proactor: IocpProactor
+06:07:18 DEBUG   asyncio: Using proactor: IocpProactor
+06:07:18 INFO    i2c.flow.common: items table: 1 row(s) [{'Pos.': '1', 'Qty.': '2.00', 'Item No.': 'CHR-ERG-OI', 'Picture': '', 'Name': 'Ergonomic Des...', 'Description': '', 'VAT': 'VAT (19.0...', 'U.Price': '$250.00', 'Discount': '-10.00 %', 'Price': '$450.00'}]
+06:07:18 INFO    i2c.ui.evidence: evidence 13_products_set_line_1.png: products.set_line_1: CHR-ERG-01: qty 2 x 250.00 - 10% @ VAT 19% = 450.00 (read back)
+06:07:18 INFO    i2c.flow.runner: ok products.set_line_1 (3.4 s; uia 17 x = 0.4 s, ocr 95 x = 0.5 s, wait 10 x = 1.0 s): CHR-ERG-01: qty 2 x 250.00 - 10% @ VAT 19% = 450.00 (read back)
+06:07:18 INFO    i2c.flow.runner: --- products.add_line_2
+06:07:19 DEBUG   asyncio: Using proactor: IocpProactor
+06:07:19 DEBUG   asyncio: Using proactor: IocpProactor
+06:07:19 DEBUG   asyncio: Using proactor: IocpProactor
+06:07:19 DEBUG   asyncio: Using proactor: IocpProactor
+06:07:19 DEBUG   asyncio: Using proactor: IocpProactor
+06:07:19 DEBUG   asyncio: Using proactor: IocpProactor
+06:07:19 DEBUG   asyncio: Using proactor: IocpProactor
+06:07:19 DEBUG   asyncio: Using proactor: IocpProactor
+06:07:19 DEBUG   asyncio: Using proactor: IocpProactor
+06:07:19 DEBUG   asyncio: Using proactor: IocpProactor
+06:07:19 DEBUG   asyncio: Using proactor: IocpProactor
+06:07:19 DEBUG   asyncio: Using proactor: IocpProactor
+06:07:19 DEBUG   asyncio: Using proactor: IocpProactor
+06:07:19 DEBUG   asyncio: Using proactor: IocpProactor
+06:07:19 DEBUG   asyncio: Using proactor: IocpProactor
+06:07:19 DEBUG   asyncio: Using proactor: IocpProactor
+06:07:19 DEBUG   asyncio: Using proactor: IocpProactor
+06:07:19 DEBUG   asyncio: Using proactor: IocpProactor
+06:07:19 DEBUG   asyncio: Using proactor: IocpProactor
+06:07:19 DEBUG   asyncio: Using proactor: IocpProactor
+06:07:19 DEBUG   asyncio: Using proactor: IocpProactor
+06:07:19 DEBUG   asyncio: Using proactor: IocpProactor
+06:07:19 DEBUG   asyncio: Using proactor: IocpProactor
+06:07:19 DEBUG   asyncio: Using proactor: IocpProactor
+06:07:19 DEBUG   asyncio: Using proactor: IocpProactor
+06:07:19 DEBUG   asyncio: Using proactor: IocpProactor
+06:07:19 DEBUG   asyncio: Using proactor: IocpProactor
+06:07:19 DEBUG   asyncio: Using proactor: IocpProactor
+06:07:19 DEBUG   asyncio: Using proactor: IocpProactor
+06:07:19 DEBUG   asyncio: Using proactor: IocpProactor
+06:07:19 DEBUG   asyncio: Using proactor: IocpProactor
+06:07:19 DEBUG   asyncio: Using proactor: IocpProactor
+06:07:19 DEBUG   asyncio: Using proactor: IocpProactor
+06:07:19 DEBUG   asyncio: Using proactor: IocpProactor
+06:07:19 DEBUG   asyncio: Using proactor: IocpProactor
+06:07:19 DEBUG   asyncio: Using proactor: IocpProactor
+06:07:19 DEBUG   asyncio: Using proactor: IocpProactor
+06:07:19 DEBUG   asyncio: Using proactor: IocpProactor
+06:07:19 INFO    i2c.flow.common: items table: 1 row(s) [{'Pos.': '1', 'Qty.': '2.00', 'Item No.': 'CHR-ERG-OI', 'Picture': '', 'Name': 'Ergonomic Des...', 'Description': '', 'VAT': 'VAT (19.0...', 'U.Price': '$250.00', 'Discount': '-10.00 %', 'Price': '$450.00'}]
+06:07:21 DEBUG   asyncio: Using proactor: IocpProactor
+06:07:21 DEBUG   asyncio: Using proactor: IocpProactor
+06:07:21 DEBUG   asyncio: Using proactor: IocpProactor
+06:07:21 DEBUG   asyncio: Using proactor: IocpProactor
+06:07:21 DEBUG   asyncio: Using proactor: IocpProactor
+06:07:21 DEBUG   asyncio: Using proactor: IocpProactor
+06:07:21 DEBUG   asyncio: Using proactor: IocpProactor
+06:07:21 DEBUG   asyncio: Using proactor: IocpProactor
+06:07:21 DEBUG   asyncio: Using proactor: IocpProactor
+06:07:21 DEBUG   asyncio: Using proactor: IocpProactor
+06:07:21 DEBUG   asyncio: Using proactor: IocpProactor
+06:07:21 DEBUG   asyncio: Using proactor: IocpProactor
+06:07:21 DEBUG   asyncio: Using proactor: IocpProactor
+06:07:21 DEBUG   asyncio: Using proactor: IocpProactor
+06:07:21 DEBUG   asyncio: Using proactor: IocpProactor
+06:07:21 DEBUG   asyncio: Using proactor: IocpProactor
+06:07:21 DEBUG   asyncio: Using proactor: IocpProactor
+06:07:21 DEBUG   asyncio: Using proactor: IocpProactor
+06:07:21 DEBUG   asyncio: Using proactor: IocpProactor
+06:07:21 DEBUG   asyncio: Using proactor: IocpProactor
+06:07:21 DEBUG   asyncio: Using proactor: IocpProactor
+06:07:21 DEBUG   asyncio: Using proactor: IocpProactor
+06:07:21 DEBUG   asyncio: Using proactor: IocpProactor
+06:07:21 DEBUG   asyncio: Using proactor: IocpProactor
+06:07:21 DEBUG   asyncio: Using proactor: IocpProactor
+06:07:21 DEBUG   asyncio: Using proactor: IocpProactor
+06:07:21 DEBUG   asyncio: Using proactor: IocpProactor
+06:07:21 DEBUG   asyncio: Using proactor: IocpProactor
+06:07:21 DEBUG   asyncio: Using proactor: IocpProactor
+06:07:21 DEBUG   asyncio: Using proactor: IocpProactor
+06:07:21 DEBUG   asyncio: Using proactor: IocpProactor
+06:07:21 DEBUG   asyncio: Using proactor: IocpProactor
+06:07:21 DEBUG   asyncio: Using proactor: IocpProactor
+06:07:21 DEBUG   asyncio: Using proactor: IocpProactor
+06:07:21 DEBUG   asyncio: Using proactor: IocpProactor
+06:07:21 DEBUG   asyncio: Using proactor: IocpProactor
+06:07:21 DEBUG   asyncio: Using proactor: IocpProactor
+06:07:21 INFO    i2c.ui.evidence: evidence 14_products_add_line_2.png: products.add_line_2: line for MAT-DESK-02 added (selector picked the item number itself; selected product)
+06:07:21 INFO    i2c.flow.runner: ok products.add_line_2 (2.5 s; uia 17 x = 1.3 s, ocr 75 x = 0.3 s, wait 1 x = 0.1 s): line for MAT-DESK-02 added (selector picked the item number itself; selected product)
+06:07:21 INFO    i2c.flow.runner: --- products.set_line_2
+06:07:21 DEBUG   asyncio: Using proactor: IocpProactor
+06:07:21 DEBUG   asyncio: Using proactor: IocpProactor
+06:07:21 DEBUG   asyncio: Using proactor: IocpProactor
+06:07:21 DEBUG   asyncio: Using proactor: IocpProactor
+06:07:21 DEBUG   asyncio: Using proactor: IocpProactor
+06:07:21 DEBUG   asyncio: Using proactor: IocpProactor
+06:07:21 DEBUG   asyncio: Using proactor: IocpProactor
+06:07:21 DEBUG   asyncio: Using proactor: IocpProactor
+06:07:21 DEBUG   asyncio: Using proactor: IocpProactor
+06:07:21 DEBUG   asyncio: Using proactor: IocpProactor
+06:07:21 DEBUG   asyncio: Using proactor: IocpProactor
+06:07:21 DEBUG   asyncio: Using proactor: IocpProactor
+06:07:21 DEBUG   asyncio: Using proactor: IocpProactor
+06:07:21 DEBUG   asyncio: Using proactor: IocpProactor
+06:07:21 DEBUG   asyncio: Using proactor: IocpProactor
+06:07:21 DEBUG   asyncio: Using proactor: IocpProactor
+06:07:21 DEBUG   asyncio: Using proactor: IocpProactor
+06:07:21 DEBUG   asyncio: Using proactor: IocpProactor
+06:07:21 DEBUG   asyncio: Using proactor: IocpProactor
+06:07:21 DEBUG   asyncio: Using proactor: IocpProactor
+06:07:21 DEBUG   asyncio: Using proactor: IocpProactor
+06:07:21 DEBUG   asyncio: Using proactor: IocpProactor
+06:07:21 DEBUG   asyncio: Using proactor: IocpProactor
+06:07:21 DEBUG   asyncio: Using proactor: IocpProactor
+06:07:21 DEBUG   asyncio: Using proactor: IocpProactor
+06:07:21 DEBUG   asyncio: Using proactor: IocpProactor
+06:07:21 DEBUG   asyncio: Using proactor: IocpProactor
+06:07:21 DEBUG   asyncio: Using proactor: IocpProactor
+06:07:21 DEBUG   asyncio: Using proactor: IocpProactor
+06:07:22 DEBUG   asyncio: Using proactor: IocpProactor
+06:07:22 DEBUG   asyncio: Using proactor: IocpProactor
+06:07:22 DEBUG   asyncio: Using proactor: IocpProactor
+06:07:22 DEBUG   asyncio: Using proactor: IocpProactor
+06:07:22 DEBUG   asyncio: Using proactor: IocpProactor
+06:07:22 DEBUG   asyncio: Using proactor: IocpProactor
+06:07:22 DEBUG   asyncio: Using proactor: IocpProactor
+06:07:22 DEBUG   asyncio: Using proactor: IocpProactor
+06:07:22 INFO    i2c.flow.products: edited Qty. via inline Edit (UIA)
+06:07:23 INFO    i2c.flow.products: cell editor still open after Enter; closing it with Esc (value already committed)
+06:07:23 DEBUG   asyncio: Using proactor: IocpProactor
+06:07:23 DEBUG   asyncio: Using proactor: IocpProactor
+06:07:23 DEBUG   asyncio: Using proactor: IocpProactor
+06:07:23 DEBUG   asyncio: Using proactor: IocpProactor
+06:07:23 DEBUG   asyncio: Using proactor: IocpProactor
+06:07:23 DEBUG   asyncio: Using proactor: IocpProactor
+06:07:23 DEBUG   asyncio: Using proactor: IocpProactor
+06:07:23 DEBUG   asyncio: Using proactor: IocpProactor
+06:07:23 DEBUG   asyncio: Using proactor: IocpProactor
+06:07:23 DEBUG   asyncio: Using proactor: IocpProactor
+06:07:23 DEBUG   asyncio: Using proactor: IocpProactor
+06:07:23 DEBUG   asyncio: Using proactor: IocpProactor
+06:07:23 DEBUG   asyncio: Using proactor: IocpProactor
+06:07:23 DEBUG   asyncio: Using proactor: IocpProactor
+06:07:23 DEBUG   asyncio: Using proactor: IocpProactor
+06:07:23 DEBUG   asyncio: Using proactor: IocpProactor
+06:07:23 DEBUG   asyncio: Using proactor: IocpProactor
+06:07:23 DEBUG   asyncio: Using proactor: IocpProactor
+06:07:23 DEBUG   asyncio: Using proactor: IocpProactor
+06:07:23 DEBUG   asyncio: Using proactor: IocpProactor
+06:07:23 DEBUG   asyncio: Using proactor: IocpProactor
+06:07:23 DEBUG   asyncio: Using proactor: IocpProactor
+06:07:23 DEBUG   asyncio: Using proactor: IocpProactor
+06:07:23 DEBUG   asyncio: Using proactor: IocpProactor
+06:07:23 DEBUG   asyncio: Using proactor: IocpProactor
+06:07:23 DEBUG   asyncio: Using proactor: IocpProactor
+06:07:23 DEBUG   asyncio: Using proactor: IocpProactor
+06:07:23 DEBUG   asyncio: Using proactor: IocpProactor
+06:07:23 DEBUG   asyncio: Using proactor: IocpProactor
+06:07:23 DEBUG   asyncio: Using proactor: IocpProactor
+06:07:23 DEBUG   asyncio: Using proactor: IocpProactor
+06:07:23 DEBUG   asyncio: Using proactor: IocpProactor
+06:07:23 DEBUG   asyncio: Using proactor: IocpProactor
+06:07:23 DEBUG   asyncio: Using proactor: IocpProactor
+06:07:23 DEBUG   asyncio: Using proactor: IocpProactor
+06:07:23 DEBUG   asyncio: Using proactor: IocpProactor
+06:07:23 DEBUG   asyncio: Using proactor: IocpProactor
+06:07:23 DEBUG   asyncio: Using proactor: IocpProactor
+06:07:23 DEBUG   asyncio: Using proactor: IocpProactor
+06:07:24 DEBUG   asyncio: Using proactor: IocpProactor
+06:07:24 DEBUG   asyncio: Using proactor: IocpProactor
+06:07:24 DEBUG   asyncio: Using proactor: IocpProactor
+06:07:24 DEBUG   asyncio: Using proactor: IocpProactor
+06:07:24 DEBUG   asyncio: Using proactor: IocpProactor
+06:07:24 DEBUG   asyncio: Using proactor: IocpProactor
+06:07:24 DEBUG   asyncio: Using proactor: IocpProactor
+06:07:24 DEBUG   asyncio: Using proactor: IocpProactor
+06:07:24 DEBUG   asyncio: Using proactor: IocpProactor
+06:07:24 DEBUG   asyncio: Using proactor: IocpProactor
+06:07:24 DEBUG   asyncio: Using proactor: IocpProactor
+06:07:24 DEBUG   asyncio: Using proactor: IocpProactor
+06:07:24 DEBUG   asyncio: Using proactor: IocpProactor
+06:07:24 DEBUG   asyncio: Using proactor: IocpProactor
+06:07:24 DEBUG   asyncio: Using proactor: IocpProactor
+06:07:24 DEBUG   asyncio: Using proactor: IocpProactor
+06:07:24 DEBUG   asyncio: Using proactor: IocpProactor
+06:07:24 DEBUG   asyncio: Using proactor: IocpProactor
+06:07:24 INFO    i2c.flow.common: items table: 2 row(s) [{'Pos.': '', 'Qty.': '2.00', 'Item No.': 'CHR-ERG-OI', 'Picture': '', 'Name': 'Ergonomic Des...', 'Description': '', 'VAT': 'VAT (19.0...', 'U.Price': '$250.00', 'Discount': '-10.00 %', 'Price': '$450.00'}, {'Pos.': '2', 'Qty.': '3.00', 'Item No.': 'MAT-DESK-02', 'Picture': '', 'Name': 'Anti-Fatigue D...', 'Description': '', 'VAT': 'VAT (19.0... •', 'U.Price': '$40.00', 'Discount': '0.00 %', 'Price': '$120.00'}]
+06:07:24 INFO    i2c.ui.evidence: evidence 15_products_set_line_2.png: products.set_line_2: MAT-DESK-02: qty 3 x 40.00 - 0% @ VAT 19% = 120.00 (read back)
+06:07:24 INFO    i2c.flow.runner: ok products.set_line_2 (2.7 s; uia 15 x = 0.4 s, ocr 94 x = 0.5 s, wait 10 x = 1.0 s): MAT-DESK-02: qty 3 x 40.00 - 0% @ VAT 19% = 120.00 (read back)
+06:07:24 INFO    i2c.flow.runner: === stage save_order
+06:07:24 INFO    i2c.flow.runner: --- save_order.check_order
+06:07:27 DEBUG   asyncio: Using proactor: IocpProactor
+06:07:28 DEBUG   asyncio: Using proactor: IocpProactor
+06:07:28 DEBUG   asyncio: Using proactor: IocpProactor
+06:07:28 DEBUG   asyncio: Using proactor: IocpProactor
+06:07:28 DEBUG   asyncio: Using proactor: IocpProactor
+06:07:28 DEBUG   asyncio: Using proactor: IocpProactor
+06:07:28 DEBUG   asyncio: Using proactor: IocpProactor
+06:07:28 DEBUG   asyncio: Using proactor: IocpProactor
+06:07:28 DEBUG   asyncio: Using proactor: IocpProactor
+06:07:28 DEBUG   asyncio: Using proactor: IocpProactor
+06:07:28 DEBUG   asyncio: Using proactor: IocpProactor
+06:07:28 DEBUG   asyncio: Using proactor: IocpProactor
+06:07:28 DEBUG   asyncio: Using proactor: IocpProactor
+06:07:28 DEBUG   asyncio: Using proactor: IocpProactor
+06:07:28 DEBUG   asyncio: Using proactor: IocpProactor
+06:07:28 DEBUG   asyncio: Using proactor: IocpProactor
+06:07:28 DEBUG   asyncio: Using proactor: IocpProactor
+06:07:28 DEBUG   asyncio: Using proactor: IocpProactor
+06:07:28 DEBUG   asyncio: Using proactor: IocpProactor
+06:07:28 DEBUG   asyncio: Using proactor: IocpProactor
+06:07:28 DEBUG   asyncio: Using proactor: IocpProactor
+06:07:28 DEBUG   asyncio: Using proactor: IocpProactor
+06:07:28 DEBUG   asyncio: Using proactor: IocpProactor
+06:07:28 DEBUG   asyncio: Using proactor: IocpProactor
+06:07:28 DEBUG   asyncio: Using proactor: IocpProactor
+06:07:28 DEBUG   asyncio: Using proactor: IocpProactor
+06:07:28 DEBUG   asyncio: Using proactor: IocpProactor
+06:07:28 DEBUG   asyncio: Using proactor: IocpProactor
+06:07:28 DEBUG   asyncio: Using proactor: IocpProactor
+06:07:28 DEBUG   asyncio: Using proactor: IocpProactor
+06:07:28 DEBUG   asyncio: Using proactor: IocpProactor
+06:07:28 DEBUG   asyncio: Using proactor: IocpProactor
+06:07:28 DEBUG   asyncio: Using proactor: IocpProactor
+06:07:28 DEBUG   asyncio: Using proactor: IocpProactor
+06:07:28 DEBUG   asyncio: Using proactor: IocpProactor
+06:07:28 DEBUG   asyncio: Using proactor: IocpProactor
+06:07:28 DEBUG   asyncio: Using proactor: IocpProactor
+06:07:28 DEBUG   asyncio: Using proactor: IocpProactor
+06:07:28 INFO    i2c.flow.common: items table: 2 row(s) [{'Pos.': '', 'Qty.': '2.00', 'Item No.': 'CHR-ERG-OI', 'Picture': '', 'Name': 'Ergonomic Des...', 'Description': '', 'VAT': 'VAT (19.0...', 'U.Price': '$250.00', 'Discount': '-10.00 %', 'Price': '$450.00'}, {'Pos.': '2', 'Qty.': '3.00', 'Item No.': 'MAT-DESK-02', 'Picture': '', 'Name': 'Anti-Fatigue D...', 'Description': '', 'VAT': 'VAT (19.0... •', 'U.Price': '$40.00', 'Discount': '0.00 %', 'Price': '$120.00'}]
+06:07:28 INFO    i2c.ui.evidence: evidence 16_save_order_check_order.png: save_order.check_order: 2 lines, addresses, discount 0 %, free shipping; totals net 570.00 vat 108.30 gross 678.30 = source
+06:07:28 INFO    i2c.flow.runner: ok save_order.check_order (4.5 s; uia 31 x = 3.5 s, ocr 38 x = 0.2 s, wait 1 x = 0.1 s): 2 lines, addresses, discount 0 %, free shipping; totals net 570.00 vat 108.30 gross 678.30 = source
+06:07:28 INFO    i2c.flow.runner: --- save_order.save_order
+06:07:29 INFO    i2c.flow.common: saved order PO000023
+06:07:30 INFO    i2c.ui.evidence: evidence 17_save_order_save_order.png: save_order.save_order: order PO000023 saved (tab 'PO000023'); Cust.Ref. WEB-2026-0714-A17 and Date 2026-07-14 re-read exactly
+06:07:30 INFO    i2c.flow.runner: ok save_order.save_order (1.7 s; uia 10 x = 1.4 s, ocr 0 x = 0.0 s, wait 0 x = 0.0 s): order PO000023 saved (tab 'PO000023'); Cust.Ref. WEB-2026-0714-A17 and Date 2026-07-14 re-read exactly
+06:07:30 INFO    i2c.flow.runner: --- save_order.verify_in_documents
+06:07:33 DEBUG   asyncio: Using proactor: IocpProactor
+06:07:33 DEBUG   asyncio: Using proactor: IocpProactor
+06:07:33 DEBUG   asyncio: Using proactor: IocpProactor
+06:07:33 DEBUG   asyncio: Using proactor: IocpProactor
+06:07:34 DEBUG   asyncio: Using proactor: IocpProactor
+06:07:34 DEBUG   asyncio: Using proactor: IocpProactor
+06:07:34 DEBUG   asyncio: Using proactor: IocpProactor
+06:07:34 DEBUG   asyncio: Using proactor: IocpProactor
+06:07:34 INFO    i2c.flow.common: documents table: 1 row(s) [{'col0': '', 'Document': 'P0000023', 'Date': 'Jul 14, 2026', 'Name': 'Northstar Office G...', 'Cust.Ref.': 'WEB-2026 -07144...', 'State': 'open', 'Total': '$678.30', 'Printed': ''}]
+06:07:34 INFO    i2c.ui.evidence: evidence 18_save_order_verify_in_documents_documents.png: Documents (search 'PO000023'): [{'col0': '', 'Document': 'P0000023', 'Date': 'Jul 14, 2026', 'Name': 'Northstar Office G...', 'Cust.Ref.': 'WEB-2026 -07144...', 'State': 'open', 'Total': '$678.30', 'Printed': ''}]
+06:07:35 INFO    i2c.ui.evidence: evidence 19_save_order_verify_in_documents.png: save_order.verify_in_documents: Documents: P0000023 Jul 14, 2026 WEB-2026 -07144... open $678.30
+06:07:35 INFO    i2c.flow.runner: ok save_order.verify_in_documents (4.7 s; uia 10 x = 2.5 s, ocr 8 x = 0.2 s, wait 11 x = 0.6 s): Documents: P0000023 Jul 14, 2026 WEB-2026 -07144... open $678.30
+06:07:35 INFO    i2c.flow.runner: --- save_order.create_invoice
+06:07:36 INFO    i2c.ui.evidence: evidence 20_save_order_create_invoice.png: save_order.create_invoice: invoice editor opened from the order's follow-up button (No. INV000018)
+06:07:36 INFO    i2c.flow.runner: ok save_order.create_invoice (1.4 s; uia 6 x = 1.1 s, ocr 0 x = 0.0 s, wait 0 x = 0.0 s): invoice editor opened from the order's follow-up button (No. INV000018)
+06:07:36 INFO    i2c.flow.runner: === stage invoice
+06:07:36 INFO    i2c.flow.runner: --- invoice.check_invoice
+06:07:37 DEBUG   asyncio: Using proactor: IocpProactor
+06:07:39 DEBUG   asyncio: Using proactor: IocpProactor
+06:07:40 DEBUG   asyncio: Using proactor: IocpProactor
+06:07:41 DEBUG   asyncio: Using proactor: IocpProactor
+06:07:41 INFO    i2c.flow.common: items table: 2 row(s) [{'Pos.': '', 'Qty.': '2.00', 'Item No.': 'CHR-ERG-OI', 'Picture': '', 'Name': 'Ergonomic Des...', 'Description': '', 'VAT': 'VAT (19.0... •', 'U.Price': '$250.00', 'Discount': '-10.00 %', 'Price': '$450.00', 'col10': ''}, {'Pos.': '2', 'Qty.': '3.00', 'Item No.': 'MAT-DESK-02', 'Picture': '', 'Name': 'Anti-Fatigue D...', 'Description': '', 'VAT': 'VAT (19.0... •', 'U.Price': '$40.00', 'Discount': '0.00 %', 'Price': '$120.00', 'col10': ''}]
+06:07:41 INFO    i2c.ui.evidence: evidence 21_invoice_check_invoice.png: invoice.check_invoice: copied from order: Cust.Ref., Order Date 2026-07-14, Net / With VAT, invoice + delivery address, 2 lines, totals 570.00 / 108.30 / 678.30
+06:07:41 INFO    i2c.flow.runner: ok invoice.check_invoice (5.0 s; uia 25 x = 3.2 s, ocr 4 x = 0.1 s, wait 1 x = 0.1 s): copied from order: Cust.Ref., Order Date 2026-07-14, Net / With VAT, invoice + delivery address, 2 lines, totals 570.00 / 108.30 / 678.30
+06:07:41 INFO    i2c.flow.runner: --- invoice.set_payment
+06:07:42 DEBUG   i2c.ui.input: date widget field order: ['month', 'day', 'year']
+06:07:45 INFO    i2c.ui.evidence: evidence 22_invoice_set_payment.png: invoice.set_payment: payment 'Bank Transfer', paid at 2026-07-18 value 678.30 (read back)
+06:07:45 INFO    i2c.flow.runner: ok invoice.set_payment (4.5 s; uia 10 x = 1.1 s, ocr 0 x = 0.0 s, wait 10 x = 0.5 s): payment 'Bank Transfer', paid at 2026-07-18 value 678.30 (read back)
+06:07:45 INFO    i2c.flow.runner: --- invoice.save_invoice
+06:07:46 INFO    i2c.flow.common: saved invoice INV000018
+06:07:47 INFO    i2c.ui.evidence: evidence 23_invoice_save_invoice.png: invoice.save_invoice: invoice INV000018 saved (tab 'INV000018'); Cust.Ref. and paid re-read exactly
+06:07:47 INFO    i2c.flow.runner: ok invoice.save_invoice (1.9 s; uia 10 x = 1.7 s, ocr 0 x = 0.0 s, wait 0 x = 0.0 s): invoice INV000018 saved (tab 'INV000018'); Cust.Ref. and paid re-read exactly
+06:07:47 INFO    i2c.flow.runner: --- invoice.verify_documents
+06:07:50 DEBUG   asyncio: Using proactor: IocpProactor
+06:07:50 DEBUG   asyncio: Using proactor: IocpProactor
+06:07:50 DEBUG   asyncio: Using proactor: IocpProactor
+06:07:50 DEBUG   asyncio: Using proactor: IocpProactor
+06:07:50 DEBUG   asyncio: Using proactor: IocpProactor
+06:07:50 DEBUG   asyncio: Using proactor: IocpProactor
+06:07:50 DEBUG   asyncio: Using proactor: IocpProactor
+06:07:51 DEBUG   asyncio: Using proactor: IocpProactor
+06:07:51 INFO    i2c.flow.common: documents table: 1 row(s) [{'col0': '', 'Document': 'INV000018', 'Date': 'Nov 8, 2026', 'Name': 'Northstar Office G...', 'Cust.Ref.': 'WEB-2026-0714-A...', 'State': 'paid', 'Total': '$678.30', 'Printed': ''}]
+06:07:51 INFO    i2c.ui.evidence: evidence 24_invoice_verify_documents_documents.png: Documents (search 'INV000018'): [{'col0': '', 'Document': 'INV000018', 'Date': 'Nov 8, 2026', 'Name': 'Northstar Office G...', 'Cust.Ref.': 'WEB-2026-0714-A...', 'State': 'paid', 'Total': '$678.30', 'Printed': ''}]
+06:07:53 DEBUG   asyncio: Using proactor: IocpProactor
+06:07:53 DEBUG   asyncio: Using proactor: IocpProactor
+06:07:53 DEBUG   asyncio: Using proactor: IocpProactor
+06:07:53 DEBUG   asyncio: Using proactor: IocpProactor
+06:07:54 DEBUG   asyncio: Using proactor: IocpProactor
+06:07:54 DEBUG   asyncio: Using proactor: IocpProactor
+06:07:54 DEBUG   asyncio: Using proactor: IocpProactor
+06:07:54 DEBUG   asyncio: Using proactor: IocpProactor
+06:07:54 INFO    i2c.flow.common: documents table: 1 row(s) [{'col0': '', 'Document': 'P0000023', 'Date': 'Jul 14, 2026', 'Name': 'Northstar Office G...', 'Cust.Ref.': 'WEB-2026 -07144...', 'State': 'open', 'Total': '$678.30', 'Printed': ''}]
+06:07:54 INFO    i2c.ui.evidence: evidence 25_invoice_verify_documents_documents.png: Documents (search 'PO000023'): [{'col0': '', 'Document': 'P0000023', 'Date': 'Jul 14, 2026', 'Name': 'Northstar Office G...', 'Cust.Ref.': 'WEB-2026 -07144...', 'State': 'open', 'Total': '$678.30', 'Printed': ''}]
+06:07:55 INFO    i2c.ui.evidence: evidence 26_invoice_verify_documents.png: invoice.verify_documents: invoice INV000018: 'paid' total $678.30; order PO000023 still 'open' total $678.30
+06:07:55 INFO    i2c.flow.runner: ok invoice.verify_documents (7.2 s; uia 16 x = 3.8 s, ocr 16 x = 0.4 s, wait 12 x = 0.7 s): invoice INV000018: 'paid' total $678.30; order PO000023 still 'open' total $678.30
+06:07:55 INFO    i2c.flow.runner: summary: ok -> C:\dev\fakturama-image-to-cash\artifacts\20261108-060651\summary.json
+06:07:55 INFO    i2c: workflow finished in 64.1 s (status ok)
+============================================================
+  status      : ok  (exit 0)
+  order       : PO000023    invoice: INV000018
+  entities    : {'debtor': 'selected', 'payment_method': 'selected', 'vat': {'VAT 19%': 'selected'}, 'product': {'CHR-ERG-01': 'selected', 'MAT-DESK-02': 'selected'}}
+  prepare     :     5.5 s   (extraction/JSON + attach)
+  order       :     7.1 s
+  debtor      :     7.5 s
+  products    :    13.1 s
+  save_order  :    12.2 s
+  invoice     :    18.6 s
+  TOTAL       :    64.1 s
+============================================================
+  details: C:\dev\fakturama-image-to-cash\artifacts\20261108-060651
+
