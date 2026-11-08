@@ -133,9 +133,12 @@ def close_saved_editor(ctx: RunContext, anchor, what: str) -> bool:  # noqa: ANN
 
 def _child_windows(ctx: RunContext) -> set[str]:
     """Titles of dialog windows owned by Fakturama (children of the main window)."""
+    from i2c.perf import timed
+
     main = ctx.app.main
     try:
-        return {c.name or "<untitled>" for c in main.element_info.children() if c.control_type == "Window"}
+        with timed("uia_dialog_lookup"):
+            return {c.name or "<untitled>" for c in main.element_info.children() if c.control_type == "Window"}
     except Exception:  # noqa: BLE001
         return set()
 

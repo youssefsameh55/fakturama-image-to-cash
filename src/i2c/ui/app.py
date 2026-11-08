@@ -108,19 +108,30 @@ class FakturamaApp:
 
     def find_dialog(self, title: str):  # noqa: ANN201 - pywinauto wrapper or None
         """A modal dialog by exact title. Probe: SWT dialogs are child Windows of the main
-        window; top-level windows of the same process are checked too."""
-        from pywinauto import Desktop
+        window; top-level windows of the same process are checked too.
+
+        The top-level check uses plain Win32 (EnumWindows filtered by Fakturama's pid, visible,
+        exact title) instead of a UIA walk over every window on the desktop: that walk made two
+        cross-process calls per window and ran on every 0.1 s poll while a selector opened or
+        closed (uncounted; product lines spent ~14 s outside UIA/OCR/waits)."""
         from pywinauto.controls.uiawrapper import UIAWrapper
+        from pywinauto.uia_element_info import UIAElementInfo
+
+        from i2c.perf import timed
 
         main = self._require()
-        for child in main.element_info.children():
-            if child.control_type == "Window" and child.name == title:
-                return UIAWrapper(child)
-        pid = main.element_info.process_id
-        for w in Desktop(backend="uia").windows(top_level_only=True):
-            if w.element_info.process_id == pid and w.element_info.name == title:
-                return w
+        with timed("uia_dialog_lookup"):
+            for child in main.element_info.children():
+                if child.control_type == "Window" and child.name == title:
+                    return UIAWrapper(child)
+            for hwnd in _top_level_windows(self._pid(), title):
+                return UIAWrapper(UIAElementInfo(hwnd))
         return None
+
+    def _pid(self) -> int:
+        if getattr(self, "_cached_pid", None) is None:
+            self._cached_pid = self._require().element_info.process_id
+        return self._cached_pid
 
     def wait_dialog(self, title: str, timeout: float | None = None, ready: str | None = None):  # noqa: ANN201
         """Wait for a dialog; with `ready`, also for a visible control of that UIA type inside it
@@ -141,3 +152,20 @@ class FakturamaApp:
         if self.main is None:
             raise ElementNotFound("not attached to Fakturama; call attach() first")
         return self.main
+
+
+def _top_level_windows(pid: int, title: str) -> list[int]:
+    """Handles of visible top-level windows of process `pid` whose title is exactly `title` (Win32)."""
+    import win32gui
+    import win32process
+
+    found: list[int] = []
+
+    def visit(hwnd: int, _: object) -> bool:
+        if (win32gui.IsWindowVisible(hwnd) and win32gui.GetWindowText(hwnd) == title
+                and win32process.GetWindowThreadProcessId(hwnd)[1] == pid):
+            found.append(hwnd)
+        return True
+
+    win32gui.EnumWindows(visit, None)
+    return found

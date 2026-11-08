@@ -439,4 +439,5 @@ photographed/skewed images; CI for offline tests.
 | Launching Fakturama | attach or launch | attach only | out of scope; must be running, maximized |
 | CLI | `--stop-after` | also `--start-at` (continue in open editors) and `gui` (launcher window) | stage-by-stage development; one-click runs |
 | Saved editors | left open | master-data editors closed after their save is verified (Ctrl+F4, verified; never unsaved) | 5 open editors made each UIA read ~2.5× slower (188 s create-everything run). Ctrl+W is unbound in Fakturama and typed a "w" into the field (seen live) |
+| Dialog lookup | UIA walk over all desktop windows | main window's children, then Win32 `EnumWindows` by Fakturama's pid | the walk ran on every 0.1 s poll while selectors opened/closed and was not counted |
 | Performance | not planned | `perf.py` counters; pane-scoped UIA reads, cached snapshots, `FindFirst` | ~75 % of a run was UI-tree reads; 156 s → 63.5 s with every check kept |
