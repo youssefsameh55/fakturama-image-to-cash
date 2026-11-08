@@ -1,0 +1,4 @@
+[lfs]
+	# Clones/pulls skip the large screen recording; get it on demand with:
+	#   git lfs pull --include="recordings/*" --exclude=""
+	fetchexclude = recordings/*

@@ -8,7 +8,8 @@ hardcoded screen coordinates. Anything ambiguous or conflicting stops the run fo
 leaves Fakturama as it is.
 
 - `DESIGN.md`: the design document (Part 1): architecture, decisions, verification, failure handling, trade-offs.
-- `PLAN.md`: the implementation plan the work followed; §14 lists what changed during implementation and why.
+  Also available as a PDF: `Design.pdf`.
+- `PLAN.md`: the implementation plan the work followed.
 
 ## Status
 
@@ -45,9 +46,11 @@ Timing printed at the end of each run (also in `run.log`):
 ```
 
 **Evidence of these runs:** the annotated per-step screenshots, `summary.json` and `run.log` are in
-`artifacts/20261108-041316/` (created) and `artifacts/20261108-041854/` (selected), 26 screenshots
+`sample_screenshots/20261108-041316/` (created) and `sample_screenshots/20261108-041854/` (selected), 26 screenshots
 each. Every run writes to `artifacts/<run-id>/` (`<run-id>` = start time, `YYYYMMDD-HHMMSS`); the
-launcher's **Open last run folder** opens the newest one. `artifacts/` is git-ignored.
+launcher's **Open last run folder** opens the newest one. `artifacts/` is git-ignored. A screen recording of both runs is in
+`recordings/Fakturama.mp4`. It is stored with Git LFS and not downloaded on clone (to keep pulls
+small); fetch it with `git lfs pull --include="recordings/*" --exclude=""`.
 
 ## Setup
 
@@ -93,7 +96,6 @@ python -m i2c run --from-json <json> --start-at save_order    # continue in the 
 python tools/dump_tree.py --window ".*Fakturama.*" --delay 5 --out artifacts/probe/<name>  # UIA probe
 python tools/read_table.py --view "VATs" --kind vats          # read one table via UIA rect + OCR
 python tools/bench_uia.py                                     # read-only cost of UIA access strategies
-python tools/make_samples.py                                  # re-render samples/order_02.png, order_03.png
 pytest -q                                                      # 137 offline tests
 ```
 
@@ -199,7 +201,11 @@ The timing block above is printed and written to `run.log` at the end of every r
   hand, or re-run after the cause is fixed.
 - **No duplicate-order guard:** running the same image twice creates a second Order and Invoice.
 - **No scrolling in tables:** only visible rows are read. Searches narrow the lists down, and the
-  samples have at most 3 lines.
+  sample has two lines.
+- **An existing VAT's code (S) isn't re-checked:** the VATs list has no code column. New VATs get code S.
+- **The negative test** (same company, different ZIP → manual review) is unit-tested on the matcher
+  but hasn't been run against Fakturama.
+- **Only the brief's image was run live;** no photos or skewed scans were tried.
 - **Launching Fakturama** is out of scope (it must be running, English UI, maximized).
 
 ## If I had 3 more hours
